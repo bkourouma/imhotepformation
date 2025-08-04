@@ -1,0 +1,837 @@
+I'll create a focused markdown file specifically for the deployment workflow:
+
+```markdown
+# 🚀 Deployment Workflow Guide
+
+A comprehensive deployment workflow for modern web applications with backend and frontend components.
+
+## �� Prerequisites
+
+### For Local Development
+- Docker and Docker Compose
+- Git
+- Text editor
+
+### For Production VPS
+- VPS with Docker support
+- Domain name (optional but recommended)
+- SSH access to VPS
+
+## ��️ Project Structure
+
+```
+your-project/
+├── app/                    # Backend code
+├── frontend/              # Frontend code
+├── deployment/
+│   ├── docker/
+│   │   ├── Dockerfile.backend
+│   │   ├── Dockerfile.frontend
+│   │   └── requirements.txt
+│   └── nginx/
+├── docker-compose.yml
+├── docker-compose.dev.yml
+├── deploy.sh
+├── deploy-vps.sh
+├── env.example
+└── .env
+```
+
+## 🔧 Environment Configuration
+
+### 1. Environment Template (`env.example`)
+
+```bash
+# =============================================================================
+# Environment Settings
+# =============================================================================
+ENVIRONMENT=development  # development or production
+DEBUG=true              # true for development, false for production
+
+# =============================================================================
+# API Configuration
+# =============================================================================
+API_HOST=0.0.0.0
+API_PORT=3006
+API_WORKERS=1          # 1 for development, 2-4 for production
+
+# =============================================================================
+# CORS Settings
+# =============================================================================
+# Development
+CORS_ORIGINS=["http://localhost:3003","http://localhost:3007"]
+# Production (update with your domain)
+# CORS_ORIGINS=["https://yourdomain.com","https://www.yourdomain.com"]
+
+# =============================================================================
+# Database Configuration
+# =============================================================================
+DB_SQLITE_PATH=data/sqlite/app.db
+VECTOR_DB_PATH=data/vectors
+UPLOAD_DIR=data/uploads
+
+# =============================================================================
+# Security
+# =============================================================================
+SECRET_KEY=your_secret_key_here_make_it_long_and_random
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# =============================================================================
+# Logging
+# =============================================================================
+LOG_LEVEL=INFO          # DEBUG, INFO, WARNING, ERROR
+LOG_FILE=logs/app.log
+LOG_MAX_SIZE=10MB
+LOG_BACKUP_COUNT=5
+```
+
+### 2. Setup Environment
+
+```bash
+# Copy template and configure
+cp env.example .env
+nano .env
+
+# Required variables to update:
+# - SECRET_KEY (generate random string)
+# - OPENAI_API_KEY (if using AI features)
+# - CORS_ORIGINS (your domains)
+```
+
+## 🐳 Docker Configuration
+
+### 1. Production Docker Compose (`docker-compose.yml`)
+
+```yaml
+version: "3.8"
+
+services:
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.backend
+    container_name: app-backend
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - API_WORKERS=2
+    volumes:
+      - backend_data:/app/data
+      - backend_logs:/app/logs
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:3006/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # React Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.frontend
+    container_name: app-frontend
+    restart: unless-stopped
+    ports:
+      - "8095:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Nginx Reverse Proxy (for production)
+  nginx:
+    image: nginx:alpine
+    container_name: app-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deployment/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - app-network
+    profiles:
+      - production
+
+volumes:
+  backend_data:
+  backend_logs:
+
+networks:
+  app-network:
+    driver: bridge
+```
+
+### 2. Development Docker Compose (`docker-compose.dev.yml`)
+
+```yaml
+version: "3.8"
+
+services:
+  # Backend with development settings
+  backend:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.backend
+    container_name: app-backend-dev
+    restart: unless-stopped
+    ports:
+      - "3007:3006"
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - API_WORKERS=1
+    volumes:
+      - ./app:/app/app:ro
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:3006/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend with development settings
+  frontend:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.frontend
+      target: builder
+    container_name: app-frontend-dev
+    restart: unless-stopped
+    command: npm run dev
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3007
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Development database viewer (optional)
+  adminer:
+    image: adminer
+    container_name: app-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    profiles:
+      - dev-tools
+
+  # Development log viewer (optional)
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: app-logs
+    restart: unless-stopped
+    ports:
+      - "9999:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-network
+    profiles:
+      - dev-tools
+
+networks:
+  app-network:
+    driver: bridge
+```
+
+### 3. Backend Dockerfile (`deployment/docker/Dockerfile.backend`)
+
+```dockerfile
+# Backend Dockerfile
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create non-root user first
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set work directory
+WORKDIR /app
+
+# Copy requirements file
+COPY deployment/docker/requirements.txt ./
+
+# Install Python dependencies
+RUN pip install -r requirements.txt
+
+# Copy application code
+COPY app/ ./app/
+COPY pyproject.toml ./
+
+# Create necessary directories and set permissions
+RUN mkdir -p data/sqlite data/uploads data/vectors logs && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:3006/health')" || exit 1
+
+# Expose port
+EXPOSE 3006
+
+# Run the application
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3006"]
+```
+
+### 4. Frontend Dockerfile (`deployment/docker/Dockerfile.frontend`)
+
+```dockerfile
+# Frontend multi-stage Dockerfile
+FROM node:18-alpine AS builder
+
+# Set work directory
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY frontend/ .
+
+# Build for production
+RUN npm run build
+
+# Development stage
+FROM node:18-alpine AS dev
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY frontend/ .
+
+# Expose development port
+EXPOSE 3003
+
+# Start development server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+# Production stage
+FROM nginx:1.29-alpine AS production
+
+# Copy built files from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY deployment/docker/nginx.conf /etc/nginx/nginx.conf
+COPY deployment/docker/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+
+# Create nginx PID directory
+RUN mkdir -p /var/run/nginx
+
+# Expose port
+EXPOSE 80
+
+# Health check
+HEALTHCHECK CMD curl -f http://localhost/ || exit 1
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+## �� Deployment Scripts
+
+### 1. Main Deployment Script (`deploy.sh`)
+
+```bash
+#!/bin/bash
+
+# Deployment Script for Web Application
+# Usage: ./deploy.sh [dev|prod]
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Check if .env file exists
+if [ ! -f .env ]; then
+    print_error ".env file not found!"
+    print_status "Please copy env.example to .env and configure your settings:"
+    echo "cp env.example .env"
+    echo "nano .env"
+    exit 1
+fi
+
+# Determine environment
+ENVIRONMENT=${1:-prod}
+COMPOSE_FILE="docker-compose.yml"
+
+if [ "$ENVIRONMENT" = "dev" ]; then
+    COMPOSE_FILE="docker-compose.dev.yml"
+    print_status "Deploying in DEVELOPMENT mode"
+else
+    print_status "Deploying in PRODUCTION mode"
+fi
+
+print_status "Using compose file: $COMPOSE_FILE"
+
+# Stop existing containers
+print_status "Stopping existing containers..."
+docker-compose -f $COMPOSE_FILE down --remove-orphans
+
+# Pull latest changes (if using git)
+if [ -d .git ]; then
+    print_status "Pulling latest changes..."
+    git pull origin main
+fi
+
+# Build and start containers
+print_status "Building and starting containers..."
+docker-compose -f $COMPOSE_FILE up -d --build
+
+# Wait for services to be healthy
+print_status "Waiting for services to be healthy..."
+sleep 30
+
+# Check service health
+print_status "Checking service health..."
+
+# Check backend
+if curl -f http://localhost:3006/health > /dev/null 2>&1; then
+    print_success "Backend is healthy"
+else
+    print_error "Backend health check failed"
+    docker-compose -f $COMPOSE_FILE logs backend
+    exit 1
+fi
+
+# Check frontend (only in production)
+if [ "$ENVIRONMENT" != "dev" ]; then
+    if curl -f http://localhost:8095 > /dev/null 2>&1; then
+        print_success "Frontend is healthy"
+    else
+        print_error "Frontend health check failed"
+        docker-compose -f $COMPOSE_FILE logs frontend
+        exit 1
+    fi
+fi
+
+print_success "Deployment completed successfully!"
+
+# Show service URLs
+echo ""
+print_status "Service URLs:"
+echo "  Backend API: http://localhost:3006"
+if [ "$ENVIRONMENT" != "dev" ]; then
+    echo "  Frontend: http://localhost:8095"
+    echo "  API Docs: http://localhost:3006/docs"
+else
+    echo "  Frontend: http://localhost:3003"
+    echo "  API Docs: http://localhost:3006/docs"
+fi
+
+# Show logs command
+echo ""
+print_status "To view logs:"
+echo "  docker-compose -f $COMPOSE_FILE logs -f"
+
+# Show stop command
+echo ""
+print_status "To stop services:"
+echo "  docker-compose -f $COMPOSE_FILE down"
+```
+
+### 2. VPS Deployment Script (`deploy-vps.sh`)
+
+```bash
+#!/bin/bash
+
+# VPS Deployment Script
+# Usage: ./deploy-vps.sh [install|deploy|status|logs|backup|update|ssl]
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to install dependencies
+install_dependencies() {
+    print_status "Installing Docker..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sh get-docker.sh
+    sudo usermod -aG docker $USER
+    
+    print_status "Installing Docker Compose..."
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    
+    print_success "Dependencies installed successfully!"
+    print_status "Please log out and log back in for Docker group changes to take effect."
+}
+
+# Function to deploy application
+deploy_app() {
+    print_status "Deploying application..."
+    
+    if [ ! -f .env ]; then
+        print_error ".env file not found!"
+        exit 1
+    fi
+    
+    chmod +x deploy.sh
+    ./deploy.sh prod
+    
+    print_success "Application deployed successfully!"
+}
+
+# Function to check status
+check_status() {
+    print_status "Checking service status..."
+    docker-compose ps
+    echo ""
+    print_status "Health checks:"
+    curl -f http://localhost:3006/health && echo " - Backend OK" || echo " - Backend FAILED"
+    curl -f http://localhost:8095 && echo " - Frontend OK" || echo " - Frontend FAILED"
+}
+
+# Function to show logs
+show_logs() {
+    SERVICE=${1:-""}
+    if [ -z "$SERVICE" ]; then
+        docker-compose logs -f
+    else
+        docker-compose logs -f $SERVICE
+    fi
+}
+
+# Function to backup data
+backup_data() {
+    print_status "Creating backup..."
+    BACKUP_FILE="backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+    docker-compose exec backend tar -czf /tmp/$BACKUP_FILE /app/data
+    docker cp app-backend:/tmp/$BACKUP_FILE ./backups/
+    print_success "Backup created: backups/$BACKUP_FILE"
+}
+
+# Function to update application
+update_app() {
+    print_status "Updating application..."
+    git pull origin main
+    ./deploy.sh prod
+    print_success "Application updated successfully!"
+}
+
+# Function to setup SSL
+setup_ssl() {
+    if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
+        print_error "Please set DOMAIN and EMAIL environment variables"
+        echo "Example: DOMAIN=yourdomain.com EMAIL=admin@yourdomain.com ./deploy-vps.sh ssl"
+        exit 1
+    fi
+    
+    print_status "Setting up SSL for $DOMAIN..."
+    sudo apt update
+    sudo apt install -y certbot python3-certbot-nginx
+    
+    # Create nginx config
+    sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
+server {
+    listen 80;
+    server_name $DOMAIN www.$DOMAIN;
+    
+    location / {
+        proxy_pass http://localhost:8095;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    
+    location /api/ {
+        proxy_pass http://localhost:3006;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF
+    
+    # Enable site
+    sudo ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
+    sudo nginx -t
+    sudo systemctl reload nginx
+    
+    # Get SSL certificate
+    sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN --email $EMAIL --agree-tos --non-interactive
+    
+    print_success "SSL setup completed for $DOMAIN!"
+}
+
+# Main script logic
+case "${1:-}" in
+    "install")
+        install_dependencies
+        ;;
+    "deploy")
+        deploy_app
+        ;;
+    "status")
+        check_status
+        ;;
+    "logs")
+        show_logs $2
+        ;;
+    "backup")
+        backup_data
+        ;;
+    "update")
+        update_app
+        ;;
+    "ssl")
+        setup_ssl
+        ;;
+    *)
+        echo "Usage: $0 {install|deploy|status|logs|backup|update|ssl}"
+        echo ""
+        echo "Commands:"
+        echo "  install  - Install Docker and dependencies"
+        echo "  deploy   - Deploy the application"
+        echo "  status   - Check service status and health"
+        echo "  logs     - Show logs (optionally specify service)"
+        echo "  backup   - Create data backup"
+        echo "  update   - Update application from git"
+        echo "  ssl      - Setup SSL certificate (requires DOMAIN and EMAIL)"
+        exit 1
+        ;;
+esac
+```
+
+## 🚀 Quick Start
+
+### Local Development
+
+```bash
+# 1. Setup environment
+cp env.example .env
+nano .env
+
+# 2. Start development environment
+./deploy.sh dev
+
+# 3. Access services
+# Backend: http://localhost:3007
+# Frontend: http://localhost:3003
+# API Docs: http://localhost:3007/docs
+```
+
+### Production VPS
+
+```bash
+# 1. Connect to VPS
+ssh root@your-vps-ip
+
+# 2. Clone repository
+git clone https://github.com/your-username/your-project.git
+cd your-project
+
+# 3. Install dependencies
+./deploy-vps.sh install
+
+# 4. Configure environment
+cp env.example .env
+nano .env
+
+# 5. Deploy application
+./deploy-vps.sh deploy
+
+# 6. Setup SSL (optional)
+DOMAIN=yourdomain.com EMAIL=admin@yourdomain.com ./deploy-vps.sh ssl
+```
+
+## 🔧 Useful Commands
+
+```bash
+# View logs
+./deploy-vps.sh logs
+./deploy-vps.sh logs backend
+./deploy-vps.sh logs frontend
+
+# Check status
+./deploy-vps.sh status
+
+# Create backup
+./deploy-vps.sh backup
+
+# Update application
+./deploy-vps.sh update
+
+# Stop services
+docker-compose down
+
+# Rebuild containers
+docker-compose up -d --build
+
+# View container resources
+docker stats
+```
+
+## ��️ Troubleshooting
+
+### Common Issues
+
+1. **Port already in use**
+   ```bash
+   sudo netstat -tulpn | grep :3006
+   sudo kill -9 <PID>
+   ```
+
+2. **Docker permission issues**
+   ```bash
+   sudo usermod -aG docker $USER
+   newgrp docker
+   ```
+
+3. **Build failures**
+   ```bash
+   docker system prune -a
+   docker-compose build --no-cache
+   ```
+
+4. **Environment variables not loaded**
+   ```bash
+   ls -la .env
+   cat .env
+   ```
+
+### Health Checks
+
+```bash
+# Backend health
+curl http://localhost:3006/health
+
+# Frontend health
+curl http://localhost:8095
+
+# Database connectivity
+docker-compose exec backend python -c "from app.core.database import engine; print('Database OK')"
+```
+
+## �� Security Checklist
+
+- [ ] Change default passwords
+- [ ] Use strong SECRET_KEY
+- [ ] Configure firewall
+- [ ] Enable SSL/TLS
+- [ ] Regular security updates
+- [ ] Monitor logs for suspicious activity
+- [ ] Backup data regularly
+
+## 📊 Monitoring
+
+### Log Locations
+- **Application logs**: `logs/app.log`
+- **Docker logs**: `docker-compose logs -f`
+- **Nginx logs**: `/var/log/nginx/`
+
+### Performance Monitoring
+```bash
+# Monitor container resources
+docker stats
+
+# Check disk usage
+df -h
+
+# Monitor memory usage
+free -h
+```
+
+---
+
+**🎉 Your application is now ready for deployment!**
+
+This workflow provides a solid foundation for deploying any web application with backend and frontend components. The key benefits are environment isolation, automated deployment, health monitoring, and easy maintenance.
+```
+
+This markdown file provides a complete deployment workflow that you can use as a template for your other projects. It includes all the essential components: environment configuration, Docker setup, deployment scripts, and troubleshooting guides.

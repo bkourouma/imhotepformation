@@ -1,0 +1,33 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.nyc_output
+coverage
+.cache
+.vscode
+.idea
+*.log
+.DS_Store
+Thumbs.db
+
+# Build artifacts that will be created during build
+dist
+
+# Development files
+.env.development
+.env.local
+
+# Azure files
+.azure
+.deployment
+deploy.cmd
+web.config
+
+# GitHub files
+.github
+
+# Documentation
+DEPLOYMENT.md
