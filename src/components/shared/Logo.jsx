@@ -5,25 +5,25 @@ export default function Logo({ variant = 'default', className = '' }) {
     default: {
       container: 'flex items-center gap-x-3',
       logo: 'h-8 w-auto',
-      text: 'text-orange-600 text-lg font-bold',
+      text: 'text-orange-600 text-sm font-bold',
       subtitle: 'text-orange-500 text-xs font-medium'
     },
     white: {
       container: 'flex items-center gap-x-3',
       logo: 'h-8 w-auto',
-      text: 'text-white text-lg font-bold',
+      text: 'text-white text-sm font-bold',
       subtitle: 'text-gray-200 text-xs font-medium'
     },
     admin: {
       container: 'flex items-center gap-x-3',
       logo: 'h-8 w-auto',
-      text: 'text-white text-lg font-bold',
+      text: 'text-white text-sm font-bold',
       subtitle: 'text-orange-200 text-xs font-medium'
     },
     compact: {
       container: 'flex items-center gap-x-2',
       logo: 'h-6 w-auto',
-      text: 'text-orange-600 text-sm font-bold',
+      text: 'text-orange-600 text-xs font-bold',
       subtitle: 'text-orange-500 text-xs font-medium'
     }
   };
@@ -63,7 +63,7 @@ export function LogoIcon({ variant = 'default', className = '' }) {
   return (
     <img
       src={logoImage}
-      alt="IMHOTEP DATA"
+      alt="FDFP-CGECI/ ASPCI"
       className={`${sizeClass} ${className}`}
     />
   );

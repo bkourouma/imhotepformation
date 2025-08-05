@@ -13,8 +13,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-// Force production mode on Azure (when PORT is set by Azure)
-const isProduction = process.env.NODE_ENV === 'production' || process.env.PORT;
+// Force production mode on Azure (when PORT is set by Azure) or when running on VPS
+const isProduction = process.env.NODE_ENV === 'production' || process.env.PORT || process.env.FORCE_PRODUCTION === 'true';
 
 // Middleware
 app.use(cors());
@@ -29,7 +29,19 @@ app.use('/api', (req, res, next) => {
 
 // Serve static files from React build in production
 if (isProduction) {
-  app.use(express.static(path.join(__dirname, '../dist')));
+  const staticPath = path.join(__dirname, '../dist');
+  console.log(`📁 Serving static files from: ${staticPath}`);
+  app.use(express.static(staticPath));
+  
+  // Check if dist directory exists
+  const fs = await import('fs');
+  if (!fs.existsSync(staticPath)) {
+    console.error(`❌ Static files directory not found: ${staticPath}`);
+  } else {
+    console.log(`✅ Static files directory exists: ${staticPath}`);
+    const files = fs.readdirSync(staticPath);
+    console.log(`📄 Files in dist: ${files.join(', ')}`);
+  }
 }
 
 // Initialiser la base de données
@@ -70,11 +82,19 @@ app.use('/api/*', (req, res) => {
 // Handle React routing in production - serve index.html for all non-API routes
 if (isProduction) {
   app.get('*', (req, res) => {
-    console.log(`Serving React app for route: ${req.path}`);
-    res.sendFile(path.join(__dirname, '../dist/index.html'), (err) => {
+    console.log(`🌐 Serving React app for route: ${req.path}`);
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    console.log(`📄 Looking for index.html at: ${indexPath}`);
+    
+    res.sendFile(indexPath, (err) => {
       if (err) {
-        console.error('Error serving index.html:', err);
-        res.status(500).send('Error loading application');
+        console.error('❌ Error serving index.html:', err);
+        res.status(500).json({ 
+          error: 'Error loading application',
+          details: process.env.NODE_ENV === 'development' ? err.message : 'Static files not found'
+        });
+      } else {
+        console.log(`✅ Successfully served index.html for route: ${req.path}`);
       }
     });
   });
