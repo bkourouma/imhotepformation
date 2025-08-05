@@ -3,6 +3,7 @@
 # 🚀 FDFP-CGECI/ ASPCI Deployment Script for Hostinger VPS
 # Server: 147.93.44.169
 # Repository: https://github.com/bkourouma/imhotepformation.git
+# Domain: imhotepformation.engage-360.net
 
 set -e  # Exit on any error
 

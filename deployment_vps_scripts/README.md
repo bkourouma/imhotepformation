@@ -1,6 +1,6 @@
-# 🚀 Formations App VPS Deployment
+# 🚀 FDFP-CGECI/ ASPCI VPS Deployment
 
-This directory contains all the necessary scripts to deploy your Formations App to your Hostinger VPS server.
+This directory contains all the necessary scripts to deploy your FDFP-CGECI/ ASPCI application to your Hostinger VPS server.
 
 ## 📁 Files Overview
 
@@ -59,8 +59,8 @@ After successful deployment, you should have:
 - ✅ Application running on PM2
 - ✅ Nginx configured and running
 - ✅ SSL certificate installed
-- ✅ Application accessible at: https://formations.engage-360.net
-- ✅ API health check working: https://formations.engage-360.net/api/health
+- ✅ Application accessible at: https://fdfp-cgeci.engage-360.net
+- ✅ API health check working: https://fdfp-cgeci.engage-360.net/api/health
 
 ## 🔧 Troubleshooting
 
@@ -75,16 +75,66 @@ After successful deployment, you should have:
    - Use: `sudo su -` if needed
 
 3. **Domain Issues**
-   - Ensure `formations.engage-360.net` points to `147.93.44.169`
-   - Check DNS propagation: `nslookup formations.engage-360.net`
+   - Ensure `fdfp-cgeci.engage-360.net` points to `147.93.44.169`
+   - Check DNS propagation: `nslookup fdfp-cgeci.engage-360.net`
 
 4. **Application Not Starting**
-   - Check logs: `pm2 logs formations-app`
+   - Check logs: `pm2 logs fdfp-cgeci-aspsi`
    - Check if port 3001 is free: `netstat -tulpn | grep 3001`
 
 5. **SSL Certificate Issues**
    - Check certificate: `certbot certificates`
    - Renew if needed: `certbot renew`
+
+## ✅ Verification Checklist
+
+After deployment, verify these items:
+
+- ✅ Application accessible at: https://imhotepformation.engage-360.net
+- ✅ API health check working: https://imhotepformation.engage-360.net/api/health
+- ✅ SSL certificate installed and working
+- ✅ PM2 process running: `pm2 status`
+- ✅ Nginx configuration valid: `nginx -t`
+- ✅ Domain DNS properly configured
+
+## 🔧 Common Issues & Solutions
+
+### DNS Issues
+- Ensure `imhotepformation.engage-360.net` points to `147.93.44.169`
+- Check DNS propagation: `nslookup imhotepformation.engage-360.net`
+
+### Application Issues
+```bash
+# Check logs
+pm2 logs formations-app
+
+# Restart application
+pm2 restart formations-app
+
+# Update application
+cd /var/www/formations-app
+git pull origin main
+npm install
+pm2 restart formations-app
+```
+
+### Nginx Issues
+```bash
+# Check configuration
+nginx -t
+
+# Check logs
+tail -f /var/log/nginx/error.log
+```
+
+### SSL Issues
+```bash
+# Check certificates
+certbot certificates
+
+# Renew certificates
+certbot renew --dry-run
+```
 
 ## 📋 Useful Commands
 
@@ -93,23 +143,16 @@ After successful deployment, you should have:
 pm2 status
 pm2 logs formations-app
 
-# Check Nginx
+# Check Nginx status
 systemctl status nginx
 nginx -t
 
-# Check SSL
+# Check SSL certificates
 certbot certificates
 
 # Restart services
 pm2 restart formations-app
-systemctl restart nginx
-
-# Update application
-cd /var/www/formations-app
-git pull origin main
-npm install
-npm run build
-pm2 restart formations-app
+systemctl reload nginx
 ```
 
 ## 🆘 Support

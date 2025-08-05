@@ -14,7 +14,7 @@
 2. Cliquez sur **"Créer une ressource"**
 3. Recherchez **"App Service"** et cliquez sur **"Créer"**
 4. Configurez:
-   - **Nom**: `formations-app-[votre-nom]`
+   - **Nom**: `fdfp-cgeci-aspsi-[votre-nom]`
    - **Système d'exploitation**: Linux
    - **Runtime stack**: Node 18 LTS
    - **Région**: France Central (ou votre région préférée)
@@ -55,7 +55,7 @@ az group create --name formations-rg --location "France Central"
 az appservice plan create --name formations-plan --resource-group formations-rg --sku B1 --is-linux
 
 # Créer l'App Service
-az webapp create --resource-group formations-rg --plan formations-plan --name formations-app-[votre-nom] --runtime "NODE|18-lts"
+az webapp create --resource-group formations-rg --plan formations-plan --name fdfp-cgeci-aspsi-[votre-nom] --runtime "NODE|18-lts"
 ```
 
 ### Déploiement du code
@@ -69,10 +69,10 @@ git add .
 git commit -m "Initial commit"
 
 # Configurer le déploiement
-az webapp deployment source config-local-git --name formations-app-[votre-nom] --resource-group formations-rg
+az webapp deployment source config-local-git --name fdfp-cgeci-aspsi-[votre-nom] --resource-group formations-rg
 
 # Ajouter Azure comme remote
-git remote add azure https://formations-app-[votre-nom].scm.azurewebsites.net:443/formations-app-[votre-nom].git
+git remote add azure https://fdfp-cgeci-aspsi-[votre-nom].scm.azurewebsites.net:443/fdfp-cgeci-aspsi-[votre-nom].git
 
 # Déployer
 git push azure main
@@ -82,18 +82,18 @@ git push azure main
 
 ### Variables d'environnement
 ```bash
-az webapp config appsettings set --resource-group formations-rg --name formations-app-[votre-nom] --settings NODE_ENV=production WEBSITE_NODE_DEFAULT_VERSION=18-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true
+az webapp config appsettings set --resource-group formations-rg --name fdfp-cgeci-aspsi-[votre-nom] --settings NODE_ENV=production WEBSITE_NODE_DEFAULT_VERSION=18-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true
 ```
 
 ### Redémarrer l'application
 ```bash
-az webapp restart --resource-group formations-rg --name formations-app-[votre-nom]
+az webapp restart --resource-group formations-rg --name fdfp-cgeci-aspsi-[votre-nom]
 ```
 
 ## Vérification
 
-1. Votre application sera disponible sur: `https://formations-app-[votre-nom].azurewebsites.net`
-2. Testez l'API: `https://formations-app-[votre-nom].azurewebsites.net/api/health`
+1. Votre application sera disponible sur: `https://fdfp-cgeci-aspsi-[votre-nom].azurewebsites.net`
+2. Testez l'API: `https://fdfp-cgeci-aspsi-[votre-nom].azurewebsites.net/api/health`
 
 ## Surveillance et logs
 

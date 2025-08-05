@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Verification Script for Formations App Deployment
+# Verification Script for FDFP-CGECI/ ASPCI Deployment
 # Run this after deployment to verify everything is working
 
 echo "🔍 Verifying deployment..."
@@ -20,15 +20,22 @@ check_status() {
     fi
 }
 
-# Check if PM2 is running
-echo "Checking PM2 status..."
-pm2 status | grep formations-app > /dev/null
-check_status $? "PM2 application is running"
+# Check PM2 process
+echo "🔍 Checking PM2 process..."
+if pm2 status | grep formations-app > /dev/null; then
+    echo "✅ PM2 process is running"
+    pm2 status | grep formations-app
+else
+    echo "❌ PM2 process is not running"
+fi
 
-# Check if application is responding
-echo "Checking application health..."
-curl -f http://localhost:3001/api/health > /dev/null 2>&1
-check_status $? "Application health check passed"
+# Check application health
+echo "🔍 Checking application health..."
+if curl -f https://imhotepformation.engage-360.net/api/health > /dev/null 2>&1; then
+    echo "✅ Application is responding"
+else
+    echo "❌ Application is not responding"
+fi
 
 # Check Nginx status
 echo "Checking Nginx status..."
@@ -36,13 +43,16 @@ systemctl is-active --quiet nginx
 check_status $? "Nginx is running"
 
 # Check SSL certificate
-echo "Checking SSL certificate..."
-certbot certificates | grep formations.engage-360.net > /dev/null
-check_status $? "SSL certificate is installed"
+echo "🔍 Checking SSL certificate..."
+if certbot certificates | grep imhotepformation.engage-360.net > /dev/null; then
+    echo "✅ SSL certificate is configured"
+else
+    echo "❌ SSL certificate is not configured"
+fi
 
 # Check if domain is accessible (if DNS is configured)
 echo "Checking domain accessibility..."
-curl -f https://formations.engage-360.net/api/health > /dev/null 2>&1
+curl -f https://imhotepformation.engage-360.net/api/health > /dev/null 2>&1
 check_status $? "Domain is accessible via HTTPS"
 
 # Show useful information
@@ -52,11 +62,17 @@ echo "=================="
 pm2 status
 echo ""
 echo "🌐 Application URLs:"
-echo "   - Main App: https://formations.engage-360.net"
-echo "   - API Health: https://formations.engage-360.net/api/health"
+echo "   - Main App: https://imhotepformation.engage-360.net"
+echo "   - API Health: https://imhotepformation.engage-360.net/api/health"
 echo ""
 echo "📋 Useful Commands:"
 echo "   - View logs: pm2 logs formations-app"
 echo "   - Restart app: pm2 restart formations-app"
 echo "   - Check Nginx: systemctl status nginx"
 echo "   - Check SSL: certbot certificates" 
+
+echo "📋 Summary:"
+echo "   - Main App: https://imhotepformation.engage-360.net"
+echo "   - API Health: https://imhotepformation.engage-360.net/api/health"
+echo "   - View logs: pm2 logs formations-app"
+echo "   - Restart app: pm2 restart formations-app" 

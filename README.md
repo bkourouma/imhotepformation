@@ -1,4 +1,4 @@
-# 🎓 IMHOTEP DATA - Plateforme de Formations
+# 🎓 FDFP-CGECI/ ASPCI - Plateforme de Formations
 
 [![Azure Deployment](https://img.shields.io/badge/Azure-Deployed-blue?logo=microsoft-azure)](https://formations-app-container.azurewebsites.net)
 [![React](https://img.shields.io/badge/React-19.1.0-blue?logo=react)](https://reactjs.org/)
@@ -7,7 +7,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-3-blue?logo=sqlite)](https://sqlite.org/)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)](https://docker.com/)
 
-Une plateforme moderne de gestion des formations professionnelles développée pour **IMHOTEP DATA**. Cette application full-stack permet aux entreprises de gérer leurs inscriptions aux formations, avec un panneau d'administration complet pour la gestion des formations et des statistiques.
+Une plateforme moderne de gestion des formations professionnelles développée pour **FDFP-CGECI/ ASPCI**. Cette application full-stack permet aux entreprises de gérer leurs inscriptions aux formations, avec un panneau d'administration complet pour la gestion des formations et des statistiques.
 
 ## 🌐 Application en Ligne
 
@@ -495,7 +495,7 @@ GET    /api/dashboard/stats/:entrepriseId  # Statistiques par entreprise
 ```json
 {
   "id": 1,
-  "nom": "IMHOTEP DATA",
+  "nom": "FDFP-CGECI/ ASPCI",
   "secteur": "Technologie",
   "taille": "PME",
   "adresse": "123 Rue de la Tech, Paris",
@@ -622,7 +622,7 @@ module.exports = {
       colors: {
         primary: {
           50: '#fff7ed',
-          500: '#f97316',  // Orange IMHOTEP DATA
+          500: '#f97316',  // Orange FDFP-CGECI/ ASPCI
           600: '#ea580c',
           700: '#c2410c',
         }
@@ -751,7 +751,7 @@ refactor(database): optimisation des requêtes
 ## 📞 Support et Contact
 
 ### Équipe de Développement
-- **Entreprise :** IMHOTEP DATA
+- **Entreprise :** FDFP-CGECI/ ASPCI
 - **Projet :** Plateforme de Formations
 - **Version :** 1.0.0
 
@@ -769,6 +769,6 @@ refactor(database): optimisation des requêtes
 
 ---
 
-**© 2025 IMHOTEP DATA - Plateforme de Formations Professionnelles**
+**© 2025 FDFP-CGECI/ ASPCI - Plateforme de Formations Professionnelles**
 
 *Développé avec ❤️ en React, Express.js et déployé sur Microsoft Azure*

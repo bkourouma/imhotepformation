@@ -1,16 +1,9 @@
-# 🚀 Step-by-Step Deployment Guide for Formations App
-
-## Server Information
-- **Server IP**: 147.93.44.169
-- **SSH**: `ssh root@147.93.44.169`
-- **Password**: Password@Acc225
-- **Repository**: https://github.com/bkourouma/imhotepformation.git
-- **Domain**: formations.engage-360.net
+# 🚀 Step-by-Step Deployment Guide for FDFP-CGECI/ ASPCI
 
 ## 📋 Prerequisites
-- SSH access to your VPS
-- Domain name pointing to your server
-- Git repository access
+- **Server**: 147.93.44.169 (Hostinger VPS)
+- **Domain**: imhotepformation.engage-360.net
+- **Repository**: https://github.com/bkourouma/imhotepformation.git
 
 ---
 
@@ -57,9 +50,10 @@ pm2 --version   # Should show PM2 version
 
 ---
 
-## 🔧 Step 4: Create Application Directory
+## 🛠️ Step 3: Setup Application Directory
 
 ```bash
+# Create and navigate to application directory
 APP_DIR="/var/www/formations-app"
 mkdir -p $APP_DIR
 cd $APP_DIR
@@ -120,20 +114,16 @@ cat .env  # Should show the environment variables
 
 ---
 
-## 🔧 Step 9: Configure PM2 Process Manager
+## 🚀 Step 8: Configure PM2
 
 ```bash
 # Start the application with PM2
 pm2 start server/server.js --name "formations-app" --env production
-
-# Save PM2 configuration
 pm2 save
-
-# Setup PM2 to start on boot
 pm2 startup
 ```
 
-**Verification**: 
+**Verification**:
 ```bash
 pm2 status  # Should show formations-app as online
 pm2 logs formations-app --lines 10  # Should show startup logs
@@ -141,14 +131,14 @@ pm2 logs formations-app --lines 10  # Should show startup logs
 
 ---
 
-## 🔧 Step 10: Configure Nginx
+## 🌐 Step 9: Configure Nginx
 
 ```bash
 # Create Nginx configuration
 cat > /etc/nginx/sites-available/formations-app << 'EOF'
 server {
     listen 80;
-    server_name formations.engage-360.net;
+    server_name imhotepformation.engage-360.net;
 
     location / {
         proxy_pass http://localhost:3001;
@@ -166,11 +156,7 @@ EOF
 
 # Enable the site
 ln -sf /etc/nginx/sites-available/formations-app /etc/nginx/sites-enabled/
-
-# Test Nginx configuration
 nginx -t
-
-# Reload Nginx
 systemctl reload nginx
 ```
 
@@ -182,11 +168,11 @@ systemctl status nginx  # Should show active (running)
 
 ---
 
-## 🔧 Step 11: Setup SSL Certificate
+## 🔒 Step 10: Setup SSL Certificate
 
 ```bash
-# Get SSL certificate
-certbot --nginx -d formations.engage-360.net --non-interactive --agree-tos --email admin@engage-360.net
+# Install SSL certificate
+certbot --nginx -d imhotepformation.engage-360.net --non-interactive --agree-tos --email admin@engage-360.net
 ```
 
 **Verification**: 
@@ -196,28 +182,14 @@ certbot certificates  # Should show your certificate
 
 ---
 
-## 🔧 Step 12: Final Verification
+## ✅ Step 11: Final Verification
 
 ```bash
-# Wait a moment for everything to start
-sleep 5
-
 # Test the application
-curl -f http://localhost:3001/api/health
-
-# Test the domain (if DNS is configured)
-curl -f https://formations.engage-360.net/api/health
+curl -f https://imhotepformation.engage-360.net/api/health
 ```
 
-**Verification**: Both commands should return JSON response with status "OK".
-
----
-
-## 🎉 Deployment Complete!
-
-Your application should now be accessible at:
-- **Main Application**: https://formations.engage-360.net
-- **API Health Check**: https://formations.engage-360.net/api/health
+**Expected Output**: Should return a JSON response indicating the API is healthy.
 
 ---
 
@@ -257,36 +229,43 @@ pm2 restart formations-app
 
 ---
 
-## 🚨 Troubleshooting
+## 🔧 Troubleshooting
 
-### If the application doesn't start:
+### Application Issues
 ```bash
+# Check application logs
+pm2 logs formations-app
+
+# Restart application
+cd /var/www/formations-app
+git pull origin main
+npm install
+pm2 restart formations-app
+
+# Check detailed logs
 pm2 logs formations-app --lines 50
 ```
 
-### If Nginx doesn't work:
+### Nginx Issues
 ```bash
+# Check Nginx configuration
 nginx -t
-systemctl status nginx
+
+# Check Nginx logs
+tail -f /var/log/nginx/error.log
+tail -f /var/log/nginx/access.log
 ```
 
-### If SSL doesn't work:
+### SSL Issues
 ```bash
+# Check SSL certificate
 certbot certificates
+
+# Renew SSL certificate
 certbot renew --dry-run
 ```
 
-### If you need to restart everything:
-```bash
-pm2 restart all
-systemctl restart nginx
-```
-
----
-
-## 📞 Support
-
-If you encounter any issues:
+### Common Commands
 1. Check the logs: `pm2 logs formations-app`
 2. Check Nginx status: `systemctl status nginx`
 3. Verify the domain DNS settings

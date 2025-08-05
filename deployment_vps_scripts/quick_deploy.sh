@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Quick Deployment Script for Formations App
+# Quick Deployment Script for FDFP-CGECI/ ASPCI
 # Copy and paste this entire script into your SSH session
 
 echo "🚀 Starting quick deployment..."
@@ -14,7 +14,7 @@ curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt install -y nodejs
 npm install -g pm2
 
-# Create app directory
+# Setup application directory
 APP_DIR="/var/www/formations-app"
 mkdir -p $APP_DIR
 cd $APP_DIR
@@ -32,7 +32,7 @@ NODE_ENV=production
 PORT=3001
 EOF
 
-# Start with PM2
+# Configure PM2
 pm2 delete formations-app 2>/dev/null || true
 pm2 start server/server.js --name "formations-app" --env production
 pm2 save
@@ -42,7 +42,7 @@ pm2 startup
 cat > /etc/nginx/sites-available/formations-app << 'EOF'
 server {
     listen 80;
-    server_name formations.engage-360.net;
+    server_name imhotepformation.engage-360.net;
 
     location / {
         proxy_pass http://localhost:3001;
@@ -58,17 +58,15 @@ server {
 }
 EOF
 
-# Enable site
 ln -sf /etc/nginx/sites-available/formations-app /etc/nginx/sites-enabled/
-nginx -t
-systemctl reload nginx
+nginx -t && systemctl reload nginx
 
 # Setup SSL
-certbot --nginx -d formations.engage-360.net --non-interactive --agree-tos --email admin@engage-360.net
+certbot --nginx -d imhotepformation.engage-360.net --non-interactive --agree-tos --email admin@engage-360.net
 
 # Final test
 sleep 5
 curl -f http://localhost:3001/api/health
 
 echo "🎉 Deployment completed!"
-echo "Your app should be available at: https://formations.engage-360.net" 
+echo "Your app should be available at: https://imhotepformation.engage-360.net" 

@@ -34,12 +34,12 @@ export default function Logo({ variant = 'default', className = '' }) {
     <div className={`${style.container} ${className}`}>
       <img
         src={logoImage}
-        alt="IMHOTEP DATA"
+        alt="FDFP-CGECI/ ASPCI"
         className={style.logo}
       />
       <div className="flex flex-col">
         <span className={style.text}>
-          IMHOTEP DATA
+          FDFP-CGECI/ ASPCI
         </span>
         <span className={style.subtitle}>
           Formations
@@ -70,7 +70,7 @@ export function LogoIcon({ variant = 'default', className = '' }) {
 }
 
 // Composant pour remplacer facilement par une image
-export function LogoImage({ src, alt = 'IMHOTEP DATA', variant = 'default', className = '' }) {
+export function LogoImage({ src, alt = 'FDFP-CGECI/ ASPCI', variant = 'default', className = '' }) {
   const variants = {
     default: 'h-8 w-auto',
     large: 'h-12 w-auto',
