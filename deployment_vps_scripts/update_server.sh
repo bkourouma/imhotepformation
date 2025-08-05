@@ -43,9 +43,15 @@ fi
 print_status "Step 2: Going to app directory..."
 cd /var/www/formations-app
 
-# Step 3: Pull latest changes
-print_status "Step 3: Pulling latest changes..."
+# Step 3: Pull latest changes from GitHub
+print_status "Step 3: Pulling latest changes from GitHub..."
+print_status "📥 Récupération des modifications (corrections serveur + script sécurisé)..."
 git pull origin main
+print_success "✅ Modifications récupérées depuis GitHub"
+
+# Show what was updated
+print_status "📋 Dernières modifications récupérées :"
+git log --oneline -3
 
 # Step 4: Install dependencies
 print_status "Step 4: Installing dependencies..."
