@@ -8,9 +8,11 @@ import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { ConfirmModal } from '../../components/shared/Modal';
 import { Input } from '../../components/shared/FormField';
+import ExportButton from '../../components/shared/ExportButton';
 import { useApi, useCrud, useSearch, usePagination } from '../../hooks/useApi';
 import { formationsService } from '../../services/api';
 import { formatUtils, dateUtils } from '../../utils/helpers';
+import { columnConfigs } from '../../utils/excelExport';
 
 export default function FormationsList() {
   const [deleteModal, setDeleteModal] = useState({ open: false, formation: null });
@@ -55,8 +57,8 @@ export default function FormationsList() {
           <div className="font-medium text-gray-900 truncate" title={value}>
             {value}
           </div>
-          <div className="text-sm text-gray-500 truncate" title={formation.cible}>
-            {formatUtils.truncate(formation.cible, 40)}
+          <div className="text-sm text-gray-500 truncate" title={formation?.cible || ''}>
+            {formatUtils.truncate(formation?.cible || 'Non spécifiée', 40)}
           </div>
         </div>
       ),
@@ -82,7 +84,7 @@ export default function FormationsList() {
         <div className="flex items-center gap-2">
           <Button
             as={Link}
-            to={`/formations/${formation.id}`}
+            to={`/formations/${formation?.id}`}
             variant="ghost"
             size="sm"
             className="p-1"
@@ -91,7 +93,7 @@ export default function FormationsList() {
           </Button>
           <Button
             as={Link}
-            to={`/formations/${formation.id}/edit`}
+            to={`/formations/${formation?.id}/edit`}
             variant="ghost"
             size="sm"
             className="p-1"
@@ -140,10 +142,24 @@ export default function FormationsList() {
             Gérez vos formations et leurs contenus
           </p>
         </div>
-        <Button as={Link} to="/formations/new" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nouvelle formation
-        </Button>
+        <div className="flex items-center gap-3">
+          <ExportButton
+            data={formations}
+            columns={columnConfigs.formations}
+            filename="formations"
+            sheetName="Formations"
+            onExportComplete={(filename) => {
+              console.log(`Export réussi: ${filename}`);
+            }}
+            onExportError={(error) => {
+              console.error('Erreur d\'export:', error);
+            }}
+          />
+          <Button as={Link} to="/formations/new" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nouvelle formation
+          </Button>
+        </div>
       </div>
 
       {/* Barre de recherche */}

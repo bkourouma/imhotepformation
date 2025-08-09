@@ -1,4 +1,5 @@
-import db from '../database/database.js';
+import { db } from '../database/database.js';
+import { Participant } from './Participant.js';
 
 export class Inscription {
   static getAll() {
@@ -6,7 +7,8 @@ export class Inscription {
       SELECT i.*, 
              e.raison_sociale as entreprise_nom,
              e.email as entreprise_email,
-             f.intitule as formation_intitule
+             f.intitule as formation_intitule,
+             (SELECT COUNT(*) FROM participants p WHERE p.inscription_id = i.id) as nombre_participants
       FROM inscriptions i
       JOIN entreprises e ON i.entreprise_id = e.id
       JOIN formations f ON i.formation_id = f.id
@@ -24,7 +26,8 @@ export class Inscription {
              f.intitule as formation_intitule,
              f.cible as formation_cible,
              f.objectifs_pedagogiques as formation_objectifs,
-             f.contenu as formation_contenu
+             f.contenu as formation_contenu,
+             (SELECT COUNT(*) FROM participants p WHERE p.inscription_id = i.id) as nombre_participants
       FROM inscriptions i
       JOIN entreprises e ON i.entreprise_id = e.id
       JOIN formations f ON i.formation_id = f.id
@@ -35,36 +38,60 @@ export class Inscription {
 
   static create(data) {
     const stmt = db.prepare(`
-      INSERT INTO inscriptions (entreprise_id, formation_id, nombre_participants, date_souhaitee)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO inscriptions (entreprise_id, formation_id)
+      VALUES (?, ?)
     `);
 
-    // Convertir la date en chaîne si c'est un objet Date
-    const dateSouhaitee = data.date_souhaitee instanceof Date
-      ? data.date_souhaitee.toISOString().split('T')[0]
-      : data.date_souhaitee;
+    const result = stmt.run(data.entreprise_id, data.formation_id);
+    const inscriptionId = result.lastInsertRowid;
 
-    const result = stmt.run(data.entreprise_id, data.formation_id, data.nombre_participants, dateSouhaitee);
-    return this.getById(result.lastInsertRowid);
+    // Créer les participants si fournis
+    if (data.participants && data.participants.length > 0) {
+      const participantsWithInscriptionId = data.participants.map(participant => ({
+        ...participant,
+        inscription_id: inscriptionId
+      }));
+      Participant.createMultiple(participantsWithInscriptionId);
+    }
+
+    return this.getById(inscriptionId);
   }
 
   static update(id, data) {
     const stmt = db.prepare(`
       UPDATE inscriptions
-      SET entreprise_id = ?, formation_id = ?, nombre_participants = ?, date_souhaitee = ?
+      SET entreprise_id = ?, formation_id = ?
       WHERE id = ?
     `);
 
-    // Convertir la date en chaîne si c'est un objet Date
-    const dateSouhaitee = data.date_souhaitee instanceof Date
-      ? data.date_souhaitee.toISOString().split('T')[0]
-      : data.date_souhaitee;
-
-    const result = stmt.run(data.entreprise_id, data.formation_id, data.nombre_participants, dateSouhaitee, id);
-    return result.changes > 0 ? this.getById(id) : null;
+    const result = stmt.run(data.entreprise_id, data.formation_id, id);
+    
+    if (result.changes > 0) {
+      // Mettre à jour les participants si fournis
+      if (data.participants) {
+        // Supprimer les participants existants
+        Participant.deleteByInscription(id);
+        
+        // Créer les nouveaux participants
+        if (data.participants.length > 0) {
+          const participantsWithInscriptionId = data.participants.map(participant => ({
+            ...participant,
+            inscription_id: id
+          }));
+          Participant.createMultiple(participantsWithInscriptionId);
+        }
+      }
+      
+      return this.getById(id);
+    }
+    
+    return null;
   }
 
   static delete(id) {
+    // Supprimer d'abord les participants
+    Participant.deleteByInscription(id);
+    
     const stmt = db.prepare('DELETE FROM inscriptions WHERE id = ?');
     const result = stmt.run(id);
     return result.changes > 0;
@@ -72,7 +99,8 @@ export class Inscription {
 
   static getByEntreprise(entrepriseId) {
     const stmt = db.prepare(`
-      SELECT i.*, f.intitule as formation_intitule
+      SELECT i.*, f.intitule as formation_intitule,
+             (SELECT COUNT(*) FROM participants p WHERE p.inscription_id = i.id) as nombre_participants
       FROM inscriptions i
       JOIN formations f ON i.formation_id = f.id
       WHERE i.entreprise_id = ?
@@ -83,7 +111,8 @@ export class Inscription {
 
   static getByFormation(formationId) {
     const stmt = db.prepare(`
-      SELECT i.*, e.raison_sociale as entreprise_nom
+      SELECT i.*, e.raison_sociale as entreprise_nom,
+             (SELECT COUNT(*) FROM participants p WHERE p.inscription_id = i.id) as nombre_participants
       FROM inscriptions i
       JOIN entreprises e ON i.entreprise_id = e.id
       WHERE i.formation_id = ?
@@ -96,7 +125,8 @@ export class Inscription {
     const stmt = db.prepare(`
       SELECT i.*, 
              e.raison_sociale as entreprise_nom,
-             f.intitule as formation_intitule
+             f.intitule as formation_intitule,
+             (SELECT COUNT(*) FROM participants p WHERE p.inscription_id = i.id) as nombre_participants
       FROM inscriptions i
       JOIN entreprises e ON i.entreprise_id = e.id
       JOIN formations f ON i.formation_id = f.id
@@ -110,7 +140,7 @@ export class Inscription {
     const totalStmt = db.prepare('SELECT COUNT(*) as total FROM inscriptions');
     const total = totalStmt.get().total;
 
-    const participantsStmt = db.prepare('SELECT SUM(nombre_participants) as total FROM inscriptions');
+    const participantsStmt = db.prepare('SELECT COUNT(*) as total FROM participants');
     const totalParticipants = participantsStmt.get().total || 0;
 
     const thisMonthStmt = db.prepare(`
@@ -131,7 +161,12 @@ export class Inscription {
     const totalStmt = db.prepare('SELECT COUNT(*) as total FROM inscriptions WHERE entreprise_id = ?');
     const total = totalStmt.get(entrepriseId).total;
 
-    const participantsStmt = db.prepare('SELECT SUM(nombre_participants) as total FROM inscriptions WHERE entreprise_id = ?');
+    const participantsStmt = db.prepare(`
+      SELECT COUNT(*) as total 
+      FROM participants p 
+      JOIN inscriptions i ON p.inscription_id = i.id 
+      WHERE i.entreprise_id = ?
+    `);
     const totalParticipants = participantsStmt.get(entrepriseId).total || 0;
 
     const thisMonthStmt = db.prepare(`
@@ -153,7 +188,8 @@ export class Inscription {
       SELECT i.*, 
              e.raison_sociale as entreprise_nom,
              e.email as entreprise_email,
-             f.intitule as formation_intitule
+             f.intitule as formation_intitule,
+             (SELECT COUNT(*) FROM participants p WHERE p.inscription_id = i.id) as nombre_participants
       FROM inscriptions i
       JOIN entreprises e ON i.entreprise_id = e.id
       JOIN formations f ON i.formation_id = f.id
@@ -173,16 +209,70 @@ export class Inscription {
     }
 
     if (filters.date_debut) {
-      query += ' AND i.date_souhaitee >= ?';
+      query += ' AND i.created_at >= ?';
       params.push(filters.date_debut);
     }
 
     if (filters.date_fin) {
-      query += ' AND i.date_souhaitee <= ?';
+      query += ' AND i.created_at <= ?';
       params.push(filters.date_fin);
     }
 
     query += ' ORDER BY i.created_at DESC';
+
+    const stmt = db.prepare(query);
+    return stmt.all(...params);
+  }
+
+  // Méthode pour récupérer une inscription avec ses participants
+  static getByIdWithParticipants(id) {
+    const inscription = this.getById(id);
+    if (inscription) {
+      inscription.participants = Participant.getByInscription(id);
+    }
+    return inscription;
+  }
+
+  // Méthode pour récupérer les inscriptions groupées par formation
+  static getAllGroupedByFormation(filters = {}) {
+    let query = `
+      SELECT
+        f.id as formation_id,
+        f.intitule as formation_intitule,
+        f.cible as formation_cible,
+        COUNT(DISTINCT s.id) as nombre_seances,
+        COUNT(DISTINCT p.id) as nombre_participants,
+        MIN(s.created_at) as premiere_seance,
+        MAX(s.created_at) as derniere_seance
+      FROM formations f
+      LEFT JOIN seances s ON f.id = s.formation_id
+      LEFT JOIN groupes g ON s.id = g.seance_id
+      LEFT JOIN participants p ON g.id = p.groupe_id
+      WHERE 1=1
+    `;
+    
+    const params = [];
+
+    if (filters.formation_id) {
+      query += ' AND f.id = ?';
+      params.push(filters.formation_id);
+    }
+
+    if (filters.date_debut) {
+      query += ' AND s.date_debut >= ?';
+      params.push(filters.date_debut);
+    }
+
+    if (filters.date_fin) {
+      query += ' AND s.date_fin <= ?';
+      params.push(filters.date_fin);
+    }
+
+    query += `
+      GROUP BY f.id, f.intitule, f.cible
+      HAVING nombre_seances > 0
+      ORDER BY derniere_seance DESC
+    `;
 
     const stmt = db.prepare(query);
     return stmt.all(...params);

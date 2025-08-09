@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { ArrowLeft, Save, Calendar, Users, BookOpen, Building2 } from 'lucide-react';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { ArrowLeft, Save, Users, BookOpen, Building2, Plus, Trash2, Check } from 'lucide-react';
 import Button from '../../components/shared/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/shared/Card';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
@@ -42,34 +42,96 @@ export default function InscriptionForm() {
     formState: { errors },
     setValue,
     watch,
+    control,
   } = useForm({
     defaultValues: {
       entreprise_id: selectedCompany?.id || '',
-      formation_id: preselectedFormationId || '',
-      nombre_participants: 1,
-      date_souhaitee: '',
+      selected_formations: formations ? formations.map(f => f.id) : [],
+      participants: [
+        {
+          nom: '',
+          prenom: '',
+          email: '',
+          telephone: '',
+          fonction: ''
+        }
+      ]
     },
+  });
+
+  // Configuration du tableau des participants
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'participants'
   });
 
   // Remplir le formulaire lors de l'édition
   useEffect(() => {
     if (inscription) {
       setValue('entreprise_id', inscription.entreprise_id);
-      setValue('formation_id', inscription.formation_id);
-      setValue('nombre_participants', inscription.nombre_participants);
-      setValue('date_souhaitee', dateUtils.toInputValue(inscription.date_souhaitee));
+      setValue('selected_formations', [inscription.formation_id]);
+      
+      // Remplir les participants si disponibles
+      if (inscription.participants && inscription.participants.length > 0) {
+        setValue('participants', inscription.participants);
+      }
     }
   }, [inscription, setValue]);
 
-  // Pré-sélectionner l'entreprise et la formation si spécifiées
+  // Pré-sélectionner l'entreprise et les formations
   useEffect(() => {
     if (selectedCompany) {
       setValue('entreprise_id', selectedCompany.id);
     }
-    if (preselectedFormationId && !isEdit) {
-      setValue('formation_id', preselectedFormationId);
+    if (formations && !isEdit) {
+      // Sélectionner toutes les formations par défaut, ou la formation présélectionnée
+      if (preselectedFormationId) {
+        setValue('selected_formations', [parseInt(preselectedFormationId)]);
+      } else {
+        setValue('selected_formations', formations.map(f => f.id));
+      }
     }
-  }, [selectedCompany, preselectedFormationId, isEdit, setValue]);
+  }, [selectedCompany, formations, preselectedFormationId, isEdit, setValue]);
+
+  // Ajouter un participant
+  const addParticipant = () => {
+    append({
+      nom: '',
+      prenom: '',
+      email: '',
+      telephone: '',
+      fonction: ''
+    });
+  };
+
+  // Supprimer un participant
+  const removeParticipant = (index) => {
+    if (fields.length > 1) {
+      remove(index);
+    }
+  };
+
+  // Gérer la sélection/désélection des formations
+  const handleFormationToggle = (formationId) => {
+    const currentSelected = watch('selected_formations') || [];
+    const isSelected = currentSelected.includes(formationId);
+    
+    if (isSelected) {
+      setValue('selected_formations', currentSelected.filter(id => id !== formationId));
+    } else {
+      setValue('selected_formations', [...currentSelected, formationId]);
+    }
+  };
+
+  // Sélectionner/désélectionner toutes les formations
+  const toggleAllFormations = () => {
+    const currentSelected = watch('selected_formations') || [];
+    if (currentSelected.length === formations?.length) {
+      setValue('selected_formations', []);
+    } else {
+      setValue('selected_formations', formations?.map(f => f.id) || []);
+    }
+  };
 
   // Soumission du formulaire
   const onSubmit = async (data) => {
@@ -79,20 +141,39 @@ export default function InscriptionForm() {
         throw new Error('Aucune entreprise sélectionnée');
       }
 
-      // Convertir les données
-      const formData = {
-        ...data,
-        entreprise_id: parseInt(data.entreprise_id),
-        formation_id: parseInt(data.formation_id),
-        nombre_participants: parseInt(data.nombre_participants),
-      };
-
-      if (isEdit) {
-        await update(id, formData);
-      } else {
-        await create(formData);
+      // Vérifier qu'il y a au moins une formation sélectionnée
+      if (!data.selected_formations || data.selected_formations.length === 0) {
+        throw new Error('Veuillez sélectionner au moins une formation');
       }
-      navigate('/inscriptions');
+
+      // Vérifier qu'il y a au moins un participant
+      if (!data.participants || data.participants.length === 0) {
+        throw new Error('Au moins un participant est requis');
+      }
+
+      // Créer une inscription pour chaque formation sélectionnée
+      const inscriptions = [];
+      for (const formationId of data.selected_formations) {
+        const formData = {
+          entreprise_id: parseInt(data.entreprise_id),
+          formation_id: parseInt(formationId),
+          participants: data.participants
+        };
+
+        if (isEdit) {
+          await update(id, formData);
+        } else {
+          const result = await create(formData);
+          inscriptions.push(result);
+        }
+      }
+
+      if (!isEdit) {
+        // Rediriger vers la liste des inscriptions après création
+        navigate('/inscriptions');
+      } else {
+        navigate('/inscriptions');
+      }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
     }
@@ -126,8 +207,9 @@ export default function InscriptionForm() {
     );
   }
 
-  const selectedFormationId = watch('formation_id');
-  const selectedFormation = formations?.find(f => f.id == selectedFormationId);
+  const selectedFormations = watch('selected_formations') || [];
+  const participants = watch('participants') || [];
+  const allFormationsSelected = selectedFormations.length === (formations?.length || 0);
 
   return (
     <div className="space-y-6">
@@ -150,7 +232,7 @@ export default function InscriptionForm() {
           <p className="text-gray-600 mt-1">
             {isEdit
               ? 'Modifiez les détails de l\'inscription'
-              : 'Inscrivez votre entreprise à une formation'
+              : 'Inscrivez votre entreprise aux formations'
             }
           </p>
         </div>
@@ -214,124 +296,201 @@ export default function InscriptionForm() {
               </CardContent>
             </Card>
 
-            {/* Formation */}
+            {/* Formations */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5" />
-                  Formation
+                  Formations
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <FormField
-                  label="Sélectionner une formation"
-                  error={errors.formation_id?.message}
-                  required
-                >
-                  <Select
-                    {...register('formation_id', {
-                      required: 'Veuillez sélectionner une formation'
+                <div className="space-y-4">
+                  {/* Bouton pour sélectionner/désélectionner toutes les formations */}
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-gray-600">
+                      {selectedFormations.length} formation(s) sélectionnée(s)
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleAllFormations}
+                      className="flex items-center gap-2"
+                    >
+                      <Check className="h-4 w-4" />
+                      {allFormationsSelected ? 'Désélectionner tout' : 'Sélectionner tout'}
+                    </Button>
+                  </div>
+
+                  {/* Liste des formations */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {formations?.map((formation) => {
+                      const isSelected = selectedFormations.includes(formation.id);
+                      return (
+                        <div
+                          key={formation.id}
+                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'border-orange-500 bg-orange-50'
+                              : 'border-gray-200 bg-white hover:bg-gray-50'
+                          }`}
+                          onClick={() => handleFormationToggle(formation.id)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
+                              isSelected
+                                ? 'border-orange-500 bg-orange-500'
+                                : 'border-gray-300'
+                            }`}>
+                              {isSelected && <Check className="h-3 w-3 text-white" />}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">
+                                {formation.intitule}
+                              </h4>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {formation.cible}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
                     })}
-                    placeholder="Choisissez une formation..."
-                    options={formations?.map(formation => ({
-                      value: formation.id,
-                      label: formation.intitule
-                    })) || []}
-                    error={errors.formation_id}
-                  />
-                </FormField>
+                  </div>
+
+                  {errors.selected_formations && (
+                    <p className="text-red-600 text-sm mt-2">
+                      {errors.selected_formations.message}
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Détails de l'inscription */}
+            {/* Participants */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Détails de l'inscription
+                  <Users className="h-5 w-5" />
+                  Participants
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  label="Nombre de participants"
-                  error={errors.nombre_participants?.message}
-                  required
-                >
-                  <Input
-                    type="number"
-                    min="1"
-                    max="100"
-                    {...register('nombre_participants', {
-                      required: 'Le nombre de participants est obligatoire',
-                      min: {
-                        value: 1,
-                        message: 'Au moins 1 participant requis'
-                      },
-                      max: {
-                        value: 100,
-                        message: 'Maximum 100 participants'
-                      }
-                    })}
-                    error={errors.nombre_participants}
-                  />
-                </FormField>
+                {fields.map((field, index) => (
+                  <div key={field.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-900">
+                        Participant {index + 1}
+                      </h4>
+                      {fields.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeParticipant(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        label="Prénom"
+                        error={errors.participants?.[index]?.prenom?.message}
+                        required
+                      >
+                        <Input
+                          {...register(`participants.${index}.prenom`, {
+                            required: 'Le prénom est obligatoire'
+                          })}
+                          placeholder="Prénom"
+                          error={errors.participants?.[index]?.prenom}
+                        />
+                      </FormField>
 
-                <FormField
-                  label="Date souhaitée"
-                  error={errors.date_souhaitee?.message}
-                  required
+                      <FormField
+                        label="Nom"
+                        error={errors.participants?.[index]?.nom?.message}
+                        required
+                      >
+                        <Input
+                          {...register(`participants.${index}.nom`, {
+                            required: 'Le nom est obligatoire'
+                          })}
+                          placeholder="Nom"
+                          error={errors.participants?.[index]?.nom}
+                        />
+                      </FormField>
+
+                      <FormField
+                        label="Email"
+                        error={errors.participants?.[index]?.email?.message}
+                        required
+                      >
+                        <Input
+                          type="email"
+                          {...register(`participants.${index}.email`, {
+                            required: 'L\'email est obligatoire',
+                            pattern: {
+                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                              message: 'Email invalide'
+                            }
+                          })}
+                          placeholder="email@exemple.com"
+                          error={errors.participants?.[index]?.email}
+                        />
+                      </FormField>
+
+                      <FormField
+                        label="Téléphone"
+                        error={errors.participants?.[index]?.telephone?.message}
+                        required
+                      >
+                        <Input
+                          {...register(`participants.${index}.telephone`, {
+                            required: 'Le téléphone est obligatoire'
+                          })}
+                          placeholder="01 23 45 67 89"
+                          error={errors.participants?.[index]?.telephone}
+                        />
+                      </FormField>
+
+                      <FormField
+                        label="Fonction"
+                        error={errors.participants?.[index]?.fonction?.message}
+                        required
+                        className="md:col-span-2"
+                      >
+                        <Input
+                          {...register(`participants.${index}.fonction`, {
+                            required: 'La fonction est obligatoire'
+                          })}
+                          placeholder="Développeur, Chef de projet, etc."
+                          error={errors.participants?.[index]?.fonction}
+                        />
+                      </FormField>
+                    </div>
+                  </div>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addParticipant}
+                  className="w-full flex items-center justify-center gap-2"
                 >
-                  <Input
-                    type="date"
-                    min={new Date().toISOString().split('T')[0]}
-                    {...register('date_souhaitee', {
-                      required: 'La date souhaitée est obligatoire'
-                    })}
-                    error={errors.date_souhaitee}
-                  />
-                </FormField>
+                  <Plus className="h-4 w-4" />
+                  Ajouter un participant
+                </Button>
               </CardContent>
             </Card>
           </div>
 
           {/* Sidebar avec aperçu */}
           <div className="space-y-6">
-            {/* Aperçu de la formation sélectionnée */}
-            {selectedFormation && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Formation sélectionnée</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="font-medium text-gray-900">
-                        {selectedFormation.intitule}
-                      </h4>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {selectedFormation.cible}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Objectifs :</p>
-                      <p className="text-sm text-gray-600">
-                        {selectedFormation.objectifs_pedagogiques.substring(0, 150)}...
-                      </p>
-                    </div>
-                    <Button
-                      as={Link}
-                      to={`/formations/${selectedFormation.id}`}
-                      variant="ghost"
-                      size="sm"
-                      className="w-full"
-                    >
-                      Voir les détails
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Résumé */}
             <Card>
               <CardHeader>
@@ -346,24 +505,15 @@ export default function InscriptionForm() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Formation :</span>
+                    <span className="text-gray-600">Formations :</span>
                     <span className="font-medium">
-                      {selectedFormation?.intitule || 'Non sélectionnée'}
+                      {selectedFormations.length} sélectionnée(s)
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Participants :</span>
                     <span className="font-medium">
-                      {watch('nombre_participants') || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Date :</span>
-                    <span className="font-medium">
-                      {watch('date_souhaitee') ?
-                        dateUtils.format(watch('date_souhaitee')) :
-                        'Non définie'
-                      }
+                      {participants.length}
                     </span>
                   </div>
                 </div>
@@ -384,11 +534,11 @@ export default function InscriptionForm() {
           <Button
             type="submit"
             loading={saveLoading}
-            disabled={!selectedCompany || !watch('entreprise_id')}
+            disabled={!selectedCompany || !watch('entreprise_id') || participants.length === 0 || selectedFormations.length === 0}
             className="flex items-center gap-2"
           >
             <Save className="h-4 w-4" />
-            {isEdit ? 'Mettre à jour' : 'Créer l\'inscription'}
+            {isEdit ? 'Mettre à jour' : 'Créer les inscriptions'}
           </Button>
         </div>
       </form>

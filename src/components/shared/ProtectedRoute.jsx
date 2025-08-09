@@ -16,7 +16,11 @@ export default function ProtectedRoute({ children }) {
 
   // Rediriger vers la sélection d'entreprise si nécessaire
   if (shouldRedirectToCompanySelection) {
-    return <Navigate to="/company-selection" replace />;
+    // Do NOT apply for entreprise portal routes
+    const pathname = window.location.pathname || '';
+    if (!pathname.startsWith('/entreprise')) {
+      return <Navigate to="/company-selection" replace />;
+    }
   }
 
   // Afficher le contenu protégé

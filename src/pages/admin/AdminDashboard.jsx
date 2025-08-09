@@ -102,7 +102,7 @@ export default function AdminDashboard() {
   }
 
   const stats = data?.stats || {};
-  const inscriptionsRecentes = data?.inscriptionsRecentes || [];
+  const employesRecents = data?.employesRecents || [];
   const formationsPopulaires = data?.formationsPopulaires || [];
 
   return (
@@ -142,30 +142,30 @@ export default function AdminDashboard() {
           link="/admin/entreprises"
         />
         <StatCard
-          title="Total Inscriptions"
-          value={formatUtils.number(stats.totalInscriptions || 0)}
+          title="Total Employés"
+          value={formatUtils.number(stats.totalEmployes || 0)}
           icon={UserCheck}
           color="orange"
-          link="/admin/inscriptions"
+          link="/employes"
         />
         <StatCard
           title="Total Participants"
           value={formatUtils.number(stats.totalParticipants || 0)}
           icon={Users}
           color="purple"
-          trend={`+${stats.inscriptionsCeMois || 0} ce mois`}
+          trend={`+${stats.employesCeMois || 0} ce mois`}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Inscriptions récentes */}
+        {/* Employés récents */}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Inscriptions récentes</CardTitle>
+              <CardTitle>Employés récents</CardTitle>
               <Button 
                 as={Link} 
-                to="/admin/inscriptions" 
+                to="/employes" 
                 variant="ghost" 
                 size="sm"
               >
@@ -174,32 +174,32 @@ export default function AdminDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            {inscriptionsRecentes.length > 0 ? (
+            {employesRecents.length > 0 ? (
               <div className="space-y-4">
-                {inscriptionsRecentes.map((inscription) => (
-                  <div key={inscription.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                {employesRecents.map((employe) => (
+                  <div key={employe.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <p className="font-medium text-gray-900">
-                        {inscription.entreprise_nom}
+                        {employe.prenom} {employe.nom}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {inscription.formation_intitule}
+                        {employe.entreprise_nom}
                       </p>
                       <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {inscription.nombre_participants} participants
+                          <UserCheck className="h-3 w-3" />
+                          {employe.fonction}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {dateUtils.format(inscription.date_souhaitee)}
+                          {dateUtils.format(employe.created_at)}
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
                       <Button
                         as={Link}
-                        to={`/admin/inscriptions/${inscription.id}`}
+                        to={`/employes/${employe.id}`}
                         variant="ghost"
                         size="sm"
                       >
@@ -211,7 +211,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <p className="text-gray-500 text-center py-4">
-                Aucune inscription récente
+                Aucun employé récent
               </p>
             )}
           </CardContent>
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-orange-600">
-                        {formation.inscription_count || 0} inscriptions
+                        {formation.nombre_participants || 0} participants
                       </p>
                       <Button
                         as={Link}

@@ -8,9 +8,11 @@ import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { ConfirmModal } from '../../components/shared/Modal';
 import { Input } from '../../components/shared/FormField';
+import ExportButton from '../../components/shared/ExportButton';
 import { useApi, useCrud, useSearch, usePagination } from '../../hooks/useApi';
 import { entreprisesService } from '../../services/api';
 import { formatUtils, dateUtils } from '../../utils/helpers';
+import { columnConfigs } from '../../utils/excelExport';
 
 export default function EntreprisesList() {
   const [deleteModal, setDeleteModal] = useState({ open: false, entreprise: null });
@@ -140,10 +142,24 @@ export default function EntreprisesList() {
             Gérez les entreprises inscrites aux formations
           </p>
         </div>
-        <Button as={Link} to="/entreprises/new" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nouvelle entreprise
-        </Button>
+        <div className="flex items-center gap-3">
+          <ExportButton
+            data={entreprises}
+            columns={columnConfigs.entreprises}
+            filename="entreprises"
+            sheetName="Entreprises"
+            onExportComplete={(filename) => {
+              console.log(`Export réussi: ${filename}`);
+            }}
+            onExportError={(error) => {
+              console.error('Erreur d\'export:', error);
+            }}
+          />
+          <Button as={Link} to="/entreprises/new" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nouvelle entreprise
+          </Button>
+        </div>
       </div>
 
       {/* Barre de recherche */}

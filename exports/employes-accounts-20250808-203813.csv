@@ -1,0 +1,8 @@
+entreprise,entreprise_email,employe_id,prenom,nom,email,telephone,fonction,password,password_is_hashed
+BMI WFS,baba.kourouma@allianceconsultants.net,4,Fatou,Koné,fatou.kone@bmi.ci,03 45 67 89 01,Responsable IT,,true
+BMI WFS,baba.kourouma@allianceconsultants.net,5,Moussa,Traoré,moussa.traore@bmi.ci,03 45 67 89 02,Développeur,,true
+BMI WFS,baba.kourouma@allianceconsultants.net,6,baba,kourou,rrrt@ceere.com,014444555,erremkm,,true
+BMI WFS,baba.kourouma@allianceconsultants.net,7,baba,kourouma,errr@erre.com,014444555,erre,,true
+Digital Innovations,info@digital-innovations.fr,1,Jean,Dupont,jean.dupont@digital-innovations.fr,01 23 45 67 89,Développeur Senior,,true
+Digital Innovations,info@digital-innovations.fr,2,Sophie,Martin,sophie.martin@digital-innovations.fr,01 23 45 67 90,Chef de Projet,,true
+Tech Solutions,contact@tech-solutions.com,3,Pierre,Bernard,pierre.bernard@tech-solutions.com,02 34 56 78 90,Développeur Full-Stack,,true

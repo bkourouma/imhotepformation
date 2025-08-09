@@ -48,6 +48,22 @@ body {
   background-color: #b91c1c;
 }
 
+/* Outline button to be used on light card footers */
+.btn-outline {
+  background-color: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.btn-outline:hover {
+  background-color: #f9fafb;
+  border-color: #cbd5e1;
+}
+
 .card {
   background-color: white;
   border-radius: 0.5rem;

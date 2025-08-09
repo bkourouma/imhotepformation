@@ -33,7 +33,7 @@ export default function Table({
                 onClick={() => handleSort(column)}
               >
                 <div className="flex items-center gap-1">
-                  {column.title}
+                  {column.label || column.title}
                   {column.sortable && (
                     <div className="flex flex-col">
                       <ChevronUp 
@@ -60,8 +60,8 @@ export default function Table({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {data.map((row, index) => (
-            <tr key={row.id || index} className="hover:bg-gray-50">
+          {(data || []).map((row, index) => (
+            <tr key={row?.id || index} className="hover:bg-gray-50">
               {columns.map((column) => (
                 <td
                   key={column.key}
@@ -71,7 +71,7 @@ export default function Table({
                     column.cellClassName
                   )}
                 >
-                  {column.render ? column.render(row[column.key], row) : row[column.key]}
+                  {column.render ? column.render(row?.[column.key], row) : (row?.[column.key] || '')}
                 </td>
               ))}
             </tr>

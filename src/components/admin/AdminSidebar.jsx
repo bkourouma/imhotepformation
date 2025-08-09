@@ -10,7 +10,11 @@ import {
   BarChart3,
   Shield,
   Users,
-  FileText
+  FileText,
+  Calendar,
+  Users2,
+  GraduationCap,
+  Bell
 } from 'lucide-react';
 import { clsx } from '../../utils/helpers';
 import Logo from '../shared/Logo';
@@ -18,10 +22,16 @@ import Logo from '../shared/Logo';
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
   { name: 'Formations', href: '/admin/formations', icon: BookOpen },
+  { name: 'Séances', href: '/admin/seances', icon: Calendar },
+  { name: 'Groupes', href: '/admin/groupes', icon: Users2 },
+  { name: 'Enseignants', href: '/admin/enseignants', icon: GraduationCap },
   { name: 'Entreprises', href: '/admin/entreprises', icon: Building2 },
   { name: 'Inscriptions', href: '/admin/inscriptions', icon: UserCheck },
+  { name: 'Évaluations', href: '/admin/evaluations', icon: BarChart3 },
   { name: 'Utilisateurs', href: '/admin/users', icon: Users },
   { name: 'Rapports', href: '/admin/reports', icon: FileText },
+  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
+  { name: 'Configuration', href: '/admin/settings', icon: Shield },
 ];
 
 function NavigationItem({ item, current }) {

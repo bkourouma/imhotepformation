@@ -18,7 +18,17 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Validation rules
+// Validation rules for participant
+const participantValidation = [
+  body('participants').isArray({ min: 1, max: 100 }).withMessage('Au moins 1 participant et maximum 100 participants'),
+  body('participants.*.nom').notEmpty().withMessage('Le nom est obligatoire'),
+  body('participants.*.prenom').notEmpty().withMessage('Le prénom est obligatoire'),
+  body('participants.*.email').isEmail().withMessage('Email invalide'),
+  body('participants.*.telephone').notEmpty().withMessage('Le téléphone est obligatoire'),
+  body('participants.*.fonction').notEmpty().withMessage('La fonction est obligatoire')
+];
+
+// Validation rules for inscription
 const inscriptionValidation = [
   body('entreprise_id')
     .isInt({ min: 1 })
@@ -26,25 +36,50 @@ const inscriptionValidation = [
   body('formation_id')
     .isInt({ min: 1 })
     .withMessage('ID formation invalide'),
-  body('nombre_participants')
-    .isInt({ min: 1, max: 100 })
-    .withMessage('Le nombre de participants doit être entre 1 et 100'),
-  body('date_souhaitee')
-    .isISO8601()
-    .toDate()
-    .custom((value) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (value < today) {
-        throw new Error('La date souhaitée ne peut pas être dans le passé');
-      }
-      return true;
-    })
-    .withMessage('Date souhaitée invalide')
+  ...participantValidation
 ];
 
 // GET /api/inscriptions - Lister toutes les inscriptions
 router.get('/', [
+  query('entreprise_id').optional().isInt({ min: 1 }),
+  query('formation_id').optional().isInt({ min: 1 }),
+  query('date_debut').optional().isISO8601(),
+  query('date_fin').optional().isISO8601(),
+  query('grouped').optional().isBoolean()
+], handleValidationErrors, (req, res) => {
+  try {
+    const filters = {};
+    
+    if (req.query.entreprise_id) filters.entreprise_id = req.query.entreprise_id;
+    if (req.query.formation_id) filters.formation_id = req.query.formation_id;
+    if (req.query.date_debut) filters.date_debut = req.query.date_debut;
+    if (req.query.date_fin) filters.date_fin = req.query.date_fin;
+    
+    let inscriptions;
+    
+    // Use grouped method by default to avoid duplicates
+    const useGrouped = req.query.grouped !== 'false';
+    
+    if (useGrouped) {
+      inscriptions = Inscription.getAllGroupedByFormation(filters);
+    } else {
+      // Fallback to individual inscriptions if explicitly requested
+      if (Object.keys(filters).length > 0) {
+        inscriptions = Inscription.filter(filters);
+      } else {
+        inscriptions = Inscription.getAll();
+      }
+    }
+    
+    res.json(inscriptions);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des inscriptions:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des inscriptions' });
+  }
+});
+
+// GET /api/inscriptions/grouped - Inscriptions groupées par formation
+router.get('/grouped', [
   query('entreprise_id').optional().isInt({ min: 1 }),
   query('formation_id').optional().isInt({ min: 1 }),
   query('date_debut').optional().isISO8601(),
@@ -58,18 +93,11 @@ router.get('/', [
     if (req.query.date_debut) filters.date_debut = req.query.date_debut;
     if (req.query.date_fin) filters.date_fin = req.query.date_fin;
     
-    let inscriptions;
-    
-    if (Object.keys(filters).length > 0) {
-      inscriptions = Inscription.filter(filters);
-    } else {
-      inscriptions = Inscription.getAll();
-    }
-    
+    const inscriptions = Inscription.getAllGroupedByFormation(filters);
     res.json(inscriptions);
   } catch (error) {
-    console.error('Erreur lors de la récupération des inscriptions:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des inscriptions' });
+    console.error('Erreur lors de la récupération des inscriptions groupées:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des inscriptions groupées' });
   }
 });
 
@@ -125,7 +153,7 @@ router.get('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
 ], handleValidationErrors, (req, res) => {
   try {
-    const inscription = Inscription.getById(req.params.id);
+    const inscription = Inscription.getByIdWithParticipants(req.params.id);
     
     if (!inscription) {
       return res.status(404).json({ error: 'Inscription non trouvée' });

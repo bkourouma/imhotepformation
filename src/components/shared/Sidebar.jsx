@@ -7,7 +7,13 @@ import {
   BookOpen,
   Building2,
   UserCheck,
-  BarChart3
+  BarChart3,
+  Users,
+  Calendar,
+  UserPlus,
+  Eye,
+  ClipboardCheck,
+  GraduationCap
 } from 'lucide-react';
 import { clsx } from '../../utils/helpers';
 import { useAdminAuth } from '../../hooks/useAdminAuth.jsx';
@@ -16,13 +22,25 @@ import Logo from './Logo';
 // Navigation de base (toujours visible)
 const baseNavigation = [
   { name: 'Tableau de bord', href: '/dashboard', icon: Home },
+  { name: 'Employés', href: '/employes', icon: Users },
   { name: 'Mes Inscriptions', href: '/inscriptions', icon: UserCheck },
-  { name: 'Nouvelle Inscription', href: '/inscriptions/new', icon: UserCheck },
+  { name: 'Nouvelle Inscription', href: '/inscriptions/new', icon: UserPlus },
 ];
 
-// Navigation admin uniquement
+// Navigation admin uniquement (read/write)
 const adminOnlyNavigation = [
   { name: 'Formations', href: '/formations', icon: BookOpen },
+  { name: 'Séances', href: '/seances', icon: Calendar },
+  { name: 'Groupes', href: '/groupes', icon: Users },
+  { name: 'Enseignants', href: '/enseignants', icon: GraduationCap },
+  { name: 'Présences', href: '/presence', icon: ClipboardCheck },
+];
+
+// Navigation read-only pour les utilisateurs réguliers
+const userReadOnlyNavigation = [
+  { name: 'Voir les Séances', href: '/seances', icon: Eye },
+  { name: 'Voir les Groupes', href: '/groupes', icon: Eye },
+  { name: 'Voir les Enseignants', href: '/enseignants', icon: GraduationCap },
 ];
 
 function NavigationItem({ item, current }) {
@@ -52,11 +70,17 @@ function SidebarContent() {
   const location = useLocation();
   const { isAuthenticated: isAdmin } = useAdminAuth();
 
+  // Debug logging
+  console.log('Sidebar - isAdmin:', isAdmin);
+  console.log('Sidebar - location.pathname:', location.pathname);
+
   // Construire la navigation en fonction du statut admin
   const navigation = [
     ...baseNavigation,
-    ...(isAdmin ? adminOnlyNavigation : [])
+    ...(isAdmin ? adminOnlyNavigation : userReadOnlyNavigation)
   ];
+
+  console.log('Sidebar - navigation items:', navigation);
 
   return (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-orange-600 px-6 pb-4">
@@ -95,6 +119,8 @@ function SidebarContent() {
 }
 
 export default function Sidebar({ open, onClose, mobile = false }) {
+  console.log('Sidebar render - mobile:', mobile, 'open:', open);
+
   if (mobile) {
     return (
       <Transition.Root show={open} as={Fragment}>
@@ -152,8 +178,6 @@ export default function Sidebar({ open, onClose, mobile = false }) {
   }
 
   return (
-    <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-orange-600 px-6 pb-4">
-      <SidebarContent />
-    </div>
+    <SidebarContent />
   );
 }

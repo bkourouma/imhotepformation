@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Calendar, Users, Building2, BookOpen, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Users, Building2, BookOpen, Mail, Phone, User } from 'lucide-react';
 import Button from '../../components/shared/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/shared/Card';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
@@ -201,6 +201,70 @@ export default function InscriptionDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Participants */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Participants ({inscription.participants?.length || inscription.nombre_participants || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {inscription.participants && inscription.participants.length > 0 ? (
+                <div className="space-y-4">
+                  {inscription.participants.map((participant, index) => (
+                    <div key={participant.id || index} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                            <User className="h-4 w-4 text-orange-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {participant.prenom} {participant.nom}
+                            </h4>
+                            <p className="text-sm text-gray-600">{participant.fonction}</p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500">#{index + 1}</span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3 w-3 text-gray-400" />
+                          <a
+                            href={`mailto:${participant.email}`}
+                            className="text-sm text-orange-600 hover:text-orange-700"
+                          >
+                            {participant.email}
+                          </a>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3 w-3 text-gray-400" />
+                          <a
+                            href={`tel:${participant.telephone}`}
+                            className="text-sm text-orange-600 hover:text-orange-700"
+                          >
+                            {participant.telephone}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">
+                    {inscription.nombre_participants || 0} participant(s) inscrit(s)
+                  </p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Les détails des participants ne sont pas disponibles
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar avec détails */}
@@ -218,16 +282,7 @@ export default function InscriptionDetail() {
                     <span className="text-sm text-gray-600">Participants</span>
                   </div>
                   <span className="font-semibold text-lg">
-                    {inscription.nombre_participants}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Date souhaitée</span>
-                  </div>
-                  <span className="font-semibold">
-                    {dateUtils.format(inscription.date_souhaitee)}
+                    {inscription.participants?.length || inscription.nombre_participants || 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -257,7 +312,7 @@ export default function InscriptionDetail() {
                 </Button>
                 <Button
                   as="a"
-                  href={`mailto:${inscription.entreprise_email}?subject=Formation ${inscription.formation_intitule}&body=Bonjour,\n\nConcernant votre inscription à la formation "${inscription.formation_intitule}" prévue le ${dateUtils.format(inscription.date_souhaitee)}...`}
+                  href={`mailto:${inscription.entreprise_email}?subject=Formation ${inscription.formation_intitule}&body=Bonjour,\n\nConcernant votre inscription à la formation "${inscription.formation_intitule}"...`}
                   variant="secondary"
                   className="w-full justify-center"
                 >

@@ -24,8 +24,8 @@ export default function AdminLogin() {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      username: '',
-      password: '',
+      username: 'admin',
+      password: 'admin123',
     },
   });
 
@@ -123,6 +123,14 @@ export default function AdminLogin() {
                 Se connecter
               </Button>
             </form>
+            
+            {/* Test account info */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-sm font-medium text-blue-900 mb-2">Compte de test :</h4>
+              <div className="text-xs text-blue-700">
+                <div><strong>Admin:</strong> admin / admin123</div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

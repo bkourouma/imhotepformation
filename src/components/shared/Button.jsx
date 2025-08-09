@@ -5,6 +5,8 @@ const variants = {
   primary: 'btn-primary',
   secondary: 'btn-secondary',
   danger: 'btn-danger',
+  destructive: 'btn-danger',
+  outline: 'btn-outline',
   ghost: 'text-gray-700 hover:text-gray-900 hover:bg-gray-50',
 };
 

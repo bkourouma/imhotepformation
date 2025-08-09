@@ -2,8 +2,11 @@ import express from 'express';
 import { query, validationResult } from 'express-validator';
 import { Formation } from '../models/Formation.js';
 import { Entreprise } from '../models/Entreprise.js';
-import { Inscription } from '../models/Inscription.js';
-import db from '../database/database.js';
+import { Employe } from '../models/Employe.js';
+import { Seance } from '../models/Seance.js';
+import { Groupe } from '../models/Groupe.js';
+import { Participant } from '../models/Participant.js';
+import { db } from '../database/database.js';
 
 const router = express.Router();
 
@@ -28,8 +31,8 @@ router.get('/', [
 
     if (entrepriseId) {
       // Dashboard pour une entreprise spécifique
-      const inscriptionStats = Inscription.getStatsByEntreprise(entrepriseId);
-      const inscriptionsRecentes = Inscription.getByEntreprise(entrepriseId).slice(0, 5);
+      const employeStats = Employe.getStatsByEntreprise(entrepriseId);
+      const employesRecents = Employe.getByEntreprise(entrepriseId).slice(0, 5);
       const formationsPopulaires = Formation.getPopularByEntreprise(entrepriseId);
       const monthlyStats = getMonthlyStatsByEntreprise(entrepriseId);
 
@@ -37,11 +40,11 @@ router.get('/', [
         stats: {
           totalFormations: formationsPopulaires.length,
           totalEntreprises: 1, // L'entreprise elle-même
-          totalInscriptions: inscriptionStats.total,
-          totalParticipants: inscriptionStats.totalParticipants,
-          inscriptionsCeMois: inscriptionStats.thisMonth
+          totalEmployes: employeStats.total,
+          totalParticipants: employeStats.totalParticipants,
+          employesCeMois: employeStats.thisMonth
         },
-        inscriptionsRecentes,
+        employesRecents,
         formationsPopulaires,
         monthlyStats
       };
@@ -51,8 +54,8 @@ router.get('/', [
       // Dashboard global (mode admin)
       const totalFormations = Formation.getAll().length;
       const totalEntreprises = Entreprise.getAll().length;
-      const inscriptionStats = Inscription.getStats();
-      const inscriptionsRecentes = Inscription.getRecent(5);
+      const employeStats = Employe.getStats();
+      const employesRecents = getRecentEmployes(5);
       const formationsPopulaires = Formation.getPopular();
       const monthlyStats = getMonthlyStats();
 
@@ -60,11 +63,11 @@ router.get('/', [
         stats: {
           totalFormations,
           totalEntreprises,
-          totalInscriptions: inscriptionStats.total,
-          totalParticipants: inscriptionStats.totalParticipants,
-          inscriptionsCeMois: inscriptionStats.thisMonth
+          totalEmployes: employeStats.total,
+          totalParticipants: employeStats.totalParticipants,
+          employesCeMois: employeStats.thisMonth
         },
-        inscriptionsRecentes,
+        employesRecents,
         formationsPopulaires,
         monthlyStats
       };
@@ -82,12 +85,13 @@ function getMonthlyStats() {
   try {
     const stmt = db.prepare(`
       SELECT
-        strftime('%Y-%m', created_at) as mois,
-        COUNT(*) as inscriptions,
-        SUM(nombre_participants) as participants
-      FROM inscriptions
-      WHERE created_at >= date('now', '-6 months')
-      GROUP BY strftime('%Y-%m', created_at)
+        strftime('%Y-%m', e.created_at) as mois,
+        COUNT(DISTINCT e.id) as employes,
+        COUNT(p.id) as participants
+      FROM employes e
+      LEFT JOIN participants p ON e.id = p.employe_id
+      WHERE e.created_at >= date('now', '-6 months')
+      GROUP BY strftime('%Y-%m', e.created_at)
       ORDER BY mois ASC
     `);
 
@@ -103,18 +107,39 @@ function getMonthlyStatsByEntreprise(entrepriseId) {
   try {
     const stmt = db.prepare(`
       SELECT
-        strftime('%Y-%m', created_at) as mois,
-        COUNT(*) as inscriptions,
-        SUM(nombre_participants) as participants
-      FROM inscriptions
-      WHERE entreprise_id = ? AND created_at >= date('now', '-6 months')
-      GROUP BY strftime('%Y-%m', created_at)
+        strftime('%Y-%m', e.created_at) as mois,
+        COUNT(DISTINCT e.id) as employes,
+        COUNT(p.id) as participants
+      FROM employes e
+      LEFT JOIN participants p ON e.id = p.employe_id
+      WHERE e.entreprise_id = ? AND e.created_at >= date('now', '-6 months')
+      GROUP BY strftime('%Y-%m', e.created_at)
       ORDER BY mois ASC
     `);
 
     return stmt.all(entrepriseId);
   } catch (error) {
     console.error('Erreur lors de la récupération des statistiques mensuelles par entreprise:', error);
+    return [];
+  }
+}
+
+// Fonction pour obtenir les employés récents
+function getRecentEmployes(limit = 5) {
+  try {
+    const stmt = db.prepare(`
+      SELECT 
+        e.*,
+        ent.raison_sociale as entreprise_nom
+      FROM employes e
+      LEFT JOIN entreprises ent ON e.entreprise_id = ent.id
+      ORDER BY e.created_at DESC
+      LIMIT ?
+    `);
+
+    return stmt.all(limit);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des employés récents:', error);
     return [];
   }
 }
@@ -147,12 +172,13 @@ router.get('/entreprises-stats', (req, res) => {
       SELECT 
         e.raison_sociale,
         e.email,
-        COUNT(i.id) as total_inscriptions,
-        SUM(i.nombre_participants) as total_participants
+        COUNT(DISTINCT emp.id) as total_employes,
+        COUNT(p.id) as total_participants
       FROM entreprises e
-      LEFT JOIN inscriptions i ON e.id = i.entreprise_id
+      LEFT JOIN employes emp ON e.id = emp.entreprise_id
+      LEFT JOIN participants p ON emp.id = p.employe_id
       GROUP BY e.id
-      ORDER BY total_inscriptions DESC, e.raison_sociale ASC
+      ORDER BY total_employes DESC, e.raison_sociale ASC
       LIMIT 10
     `);
     

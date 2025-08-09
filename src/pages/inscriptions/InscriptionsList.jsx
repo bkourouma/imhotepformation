@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Filter, Users, Calendar, Building2, BookOpen } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Filter, Users, Building2, BookOpen, Calendar } from 'lucide-react';
 import Button from '../../components/shared/Button';
 import Card from '../../components/shared/Card';
 import Table from '../../components/shared/Table';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
-import { ConfirmModal } from '../../components/shared/Modal';
 import { Input, Select } from '../../components/shared/FormField';
-import { useApi, useCrud, usePagination } from '../../hooks/useApi';
+import ExportButton from '../../components/shared/ExportButton';
+import { useApi, usePagination } from '../../hooks/useApi';
 import { inscriptionsService, entreprisesService, formationsService } from '../../services/api';
 import { formatUtils, dateUtils } from '../../utils/helpers';
 import { useCompanySession } from '../../hooks/useCompanySession.jsx';
 import { useAdminAuth } from '../../hooks/useAdminAuth.jsx';
+import { columnConfigs } from '../../utils/excelExport';
 
 export default function InscriptionsList() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [deleteModal, setDeleteModal] = useState({ open: false, inscription: null });
   const { selectedCompany } = useCompanySession();
   const { isAuthenticated: isAdmin } = useAdminAuth();
 
@@ -44,8 +44,6 @@ export default function InscriptionsList() {
   const { data: entreprises } = useApi(entreprisesService.getAll, []);
   const { data: formations } = useApi(formationsService.getAll, []);
 
-  const { remove, loading: deleteLoading } = useCrud(inscriptionsService);
-
   // Pagination
   const {
     currentPage,
@@ -71,56 +69,52 @@ export default function InscriptionsList() {
 
   // Colonnes du tableau
   const columns = [
-    // Colonne entreprise - seulement pour les admins
-    ...(isAdmin ? [{
-      key: 'entreprise_nom',
-      title: 'Entreprise',
-      sortable: true,
-      render: (value, inscription) => (
-        <div>
-          <div className="font-medium text-gray-900">{value}</div>
-          <div className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-            <Building2 className="h-3 w-3" />
-            {inscription.entreprise_email}
-          </div>
-        </div>
-      ),
-    }] : []),
     {
       key: 'formation_intitule',
       title: 'Formation',
       sortable: true,
-      render: (value) => (
+      render: (value, inscription) => (
         <div className="flex items-center gap-2">
           <BookOpen className="h-4 w-4 text-gray-400" />
-          <span className="font-medium">{value}</span>
+          <div>
+            <span className="font-medium">{value}</span>
+            {inscription.formation_cible && (
+              <div className="text-sm text-gray-500 mt-1">
+                {inscription.formation_cible}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'nombre_seances',
+      title: 'Séances',
+      render: (value) => (
+        <div className="flex items-center gap-1">
+          <Calendar className="h-4 w-4 text-gray-400" />
+          <span className="font-medium">{value || 0}</span>
         </div>
       ),
     },
     {
       key: 'nombre_participants',
       title: 'Participants',
-      render: (value) => (
+      render: (value, inscription) => (
         <div className="flex items-center gap-1">
           <Users className="h-4 w-4 text-gray-400" />
           <span className="font-medium">{value}</span>
+          {inscription.nombre_inscriptions > 1 && (
+            <span className="text-xs text-gray-500 ml-1">
+              ({inscription.nombre_inscriptions} inscriptions)
+            </span>
+          )}
         </div>
       ),
     },
     {
-      key: 'date_souhaitee',
-      title: 'Date souhaitée',
-      sortable: true,
-      render: (value) => (
-        <div className="flex items-center gap-1">
-          <Calendar className="h-4 w-4 text-gray-400" />
-          <span>{dateUtils.format(value)}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'created_at',
-      title: 'Inscrite le',
+      key: 'derniere_seance',
+      title: 'Dernière séance',
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-600">
@@ -135,7 +129,7 @@ export default function InscriptionsList() {
         <div className="flex items-center gap-2">
           <Button
             as={Link}
-            to={`/inscriptions/${inscription.id}`}
+            to={`/formations/${inscription.formation_id}`}
             variant="ghost"
             size="sm"
             className="p-1"
@@ -144,36 +138,17 @@ export default function InscriptionsList() {
           </Button>
           <Button
             as={Link}
-            to={`/inscriptions/${inscription.id}/edit`}
+            to={`/inscriptions/new?formation_id=${inscription.formation_id}`}
             variant="ghost"
             size="sm"
             className="p-1"
           >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="p-1 text-red-600 hover:text-red-700"
-            onClick={() => setDeleteModal({ open: true, inscription })}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
         </div>
       ),
     },
   ];
-
-  // Gestion de la suppression
-  const handleDelete = async () => {
-    try {
-      await remove(deleteModal.inscription.id);
-      setDeleteModal({ open: false, inscription: null });
-      refetch();
-    } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
-    }
-  };
 
   // Réinitialiser les filtres
   const clearFilters = () => {
@@ -200,15 +175,29 @@ export default function InscriptionsList() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inscriptions</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Formations et Inscriptions</h1>
           <p className="text-gray-600 mt-1">
-            Gérez les inscriptions des entreprises aux formations
+            Vue d'ensemble des formations avec leurs séances et participants
           </p>
         </div>
-        <Button as={Link} to="/inscriptions/new" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nouvelle inscription
-        </Button>
+        <div className="flex items-center gap-3">
+          <ExportButton
+            data={inscriptions || []}
+            columns={columnConfigs.inscriptions}
+            filename="inscriptions"
+            sheetName="Inscriptions"
+            onExportComplete={(filename) => {
+              console.log(`Export réussi: ${filename}`);
+            }}
+            onExportError={(error) => {
+              console.error('Erreur d\'export:', error);
+            }}
+          />
+          <Button as={Link} to="/inscriptions/new" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nouvelle inscription
+          </Button>
+        </div>
       </div>
 
       {/* Filtres */}
@@ -315,17 +304,6 @@ export default function InscriptionsList() {
           </div>
         )}
       </Card>
-
-      {/* Modal de confirmation de suppression */}
-      <ConfirmModal
-        open={deleteModal.open}
-        onClose={() => setDeleteModal({ open: false, inscription: null })}
-        onConfirm={handleDelete}
-        title="Supprimer l'inscription"
-        message={`Êtes-vous sûr de vouloir supprimer l'inscription de "${deleteModal.inscription?.entreprise_nom}" à la formation "${deleteModal.inscription?.formation_intitule}" ? Cette action est irréversible.`}
-        confirmText="Supprimer"
-        loading={deleteLoading}
-      />
     </div>
   );
 }
