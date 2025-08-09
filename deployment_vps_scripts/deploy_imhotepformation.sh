@@ -115,7 +115,6 @@ configure_env() {
   local port=$1
   info "Writing .env (port ${port}) ..."
   cat > "${APP_DIR}/.env" <<EOF
-NODE_ENV=production
 PORT=${port}
 JWT_SECRET=
 EOF
@@ -125,7 +124,7 @@ EOF
 start_pm2() {
   info "Starting app with PM2 as ${APP_NAME} ..."
   cd "${APP_DIR}"
-  pm2 start server/server.js --name "${APP_NAME}" --time --env production
+  PORT=${port:-$(grep -E '^PORT=' .env | cut -d= -f2)} NODE_ENV=production pm2 start server/server.js --name "${APP_NAME}" --time
   pm2 save >/dev/null || true
   pm2 startup >/dev/null 2>&1 || true
   ok "PM2 started"
