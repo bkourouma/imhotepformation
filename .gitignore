@@ -38,3 +38,7 @@ dist-ssr
 *.db
 *.sqlite
 *.sqlite3
+.env
+.env.*
+*.env
+.env.backup
