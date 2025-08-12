@@ -6,10 +6,8 @@ import {
   Home,
   BookOpen,
   Building2,
-  UserCheck,
   BarChart3,
   Shield,
-  Users,
   FileText,
   Calendar,
   Users2,
@@ -26,9 +24,7 @@ const navigation = [
   { name: 'Groupes', href: '/admin/groupes', icon: Users2 },
   { name: 'Enseignants', href: '/admin/enseignants', icon: GraduationCap },
   { name: 'Entreprises', href: '/admin/entreprises', icon: Building2 },
-  { name: 'Inscriptions', href: '/admin/inscriptions', icon: UserCheck },
   { name: 'Évaluations', href: '/admin/evaluations', icon: BarChart3 },
-  { name: 'Utilisateurs', href: '/admin/users', icon: Users },
   { name: 'Rapports', href: '/admin/reports', icon: FileText },
   { name: 'Notifications', href: '/admin/notifications', icon: Bell },
   { name: 'Configuration', href: '/admin/settings', icon: Shield },
@@ -82,7 +78,8 @@ function SidebarContent() {
                   <NavigationItem
                     item={item}
                     current={location.pathname === item.href || 
-                            (item.href !== '/admin/dashboard' && location.pathname.startsWith(item.href))}
+                            (item.href !== '/admin/dashboard' && 
+                             location.pathname.startsWith(item.href + '/'))}
                   />
                 </li>
               ))}

@@ -31,9 +31,7 @@ export default function AdminLogin() {
 
   const onSubmit = async (data) => {
     setLoginError('');
-    
-    const result = login(data.username, data.password);
-    
+    const result = await login(data.username, data.password);
     if (result.success) {
       navigate(from, { replace: true });
     } else {

@@ -15,6 +15,8 @@ import Button from '../components/shared/Button';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import ErrorMessage from '../components/shared/ErrorMessage';
 import WelcomeGuide from '../components/shared/WelcomeGuide';
+import FormationSelector from '../components/shared/FormationSelector';
+import SeancesPanels from '../components/shared/SeancesPanels';
 import { useCompanySession } from '../hooks/useCompanySession.jsx';
 import { useAdminAuth } from '../hooks/useAdminAuth.jsx';
 import { dashboardService, employesService, formationsService } from '../services/api';
@@ -59,6 +61,7 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedFormation, setSelectedFormation] = useState(null);
 
   const handleAdminLogout = () => {
     adminLogout();
@@ -356,6 +359,23 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Formation Selector and Seances */}
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Explorer les formations et séances</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FormationSelector
+              selectedFormation={selectedFormation}
+              onFormationChange={setSelectedFormation}
+            />
+          </CardContent>
+        </Card>
+
+        <SeancesPanels formation={selectedFormation} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, Calendar, Clock, MapPin, Users } from 'lucide-react';
 import Button from '../../components/shared/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/shared/Card';
@@ -8,11 +8,17 @@ import ErrorMessage from '../../components/shared/ErrorMessage';
 import SeanceMedia from '../../components/seances/SeanceMedia';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { seancesService } from '../../services/api';
+import { dateUtils } from '../../utils/helpers';
 
 const SeanceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated: isAdmin } = useAdminAuth();
+  
+  // Determine if we're in admin section
+  const isAdminSection = location.pathname.startsWith('/admin');
+  const backPath = isAdminSection ? '/admin/seances' : '/seances';
   const [seance, setSeance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,7 +46,7 @@ const SeanceDetail = () => {
     try {
       await seancesService.delete(id);
       setDeleteModal({ show: false, seance: null });
-      navigate('/seances');
+      navigate(backPath);
     } catch (err) {
       setError('Erreur lors de la suppression de la séance');
       console.error('Erreur:', err);
@@ -50,13 +56,7 @@ const SeanceDetail = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return dateUtils.format(date, 'dd/MM/yyyy');
   };
 
   const getStatusBadge = (seance) => {
@@ -97,7 +97,7 @@ const SeanceDetail = () => {
     return (
       <div className="text-center py-8">
         <p className="text-gray-500">Séance non trouvée</p>
-        <Button as={Link} to="/seances" className="mt-4">
+        <Button as={Link} to={backPath} className="mt-4">
           Retour aux séances
         </Button>
       </div>
@@ -111,7 +111,7 @@ const SeanceDetail = () => {
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/seances')}
+            onClick={() => navigate(backPath)}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -131,7 +131,7 @@ const SeanceDetail = () => {
           <div className="flex gap-2">
             <Button
               as={Link}
-              to={`/seances/${id}/edit`}
+              to={`${id}/edit`}
               variant="outline"
               className="flex items-center gap-2"
             >

@@ -6,17 +6,41 @@ async function apiRequest(endpoint, options = {}) {
 
   console.log('API Request:', url);
 
-  // Get token from localStorage
+  // Get token from localStorage (admin > entreprise > employe)
   const getToken = () => {
-    const session = localStorage.getItem('entreprise_session');
-    if (session) {
+    // Admin token
+    const adminSessionRaw = localStorage.getItem('admin_session');
+    if (adminSessionRaw) {
       try {
-        const parsed = JSON.parse(session);
-        return parsed.token;
+        const parsed = JSON.parse(adminSessionRaw);
+        if (parsed?.token) return parsed.token;
       } catch (error) {
-        console.error('Error parsing session:', error);
+        console.error('Error parsing admin_session:', error);
       }
     }
+
+    // Entreprise token
+    const entrepriseSessionRaw = localStorage.getItem('entreprise_session');
+    if (entrepriseSessionRaw) {
+      try {
+        const parsed = JSON.parse(entrepriseSessionRaw);
+        if (parsed?.token) return parsed.token;
+      } catch (error) {
+        console.error('Error parsing entreprise_session:', error);
+      }
+    }
+
+    // Employe token
+    const employeSessionRaw = localStorage.getItem('employe_session');
+    if (employeSessionRaw) {
+      try {
+        const parsed = JSON.parse(employeSessionRaw);
+        if (parsed?.token) return parsed.token;
+      } catch (error) {
+        console.error('Error parsing employe_session:', error);
+      }
+    }
+
     return null;
   };
 

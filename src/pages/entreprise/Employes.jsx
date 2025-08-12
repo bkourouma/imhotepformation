@@ -4,6 +4,7 @@ import { useEntrepriseAuth } from '../../hooks/useEntrepriseAuth';
 import { employesService, inscriptionsService } from '../../services/api';
 import { Card, Button, LoadingSpinner, ErrorMessage, Modal } from '../../components/shared';
 import FormField, { Input } from '../../components/shared/FormField';
+import { dateUtils } from '../../utils/helpers';
 
 export default function EntrepriseEmployes() {
   const { entreprise } = useEntrepriseAuth();
@@ -149,7 +150,7 @@ export default function EntrepriseEmployes() {
                       <tr key={i.id || idx}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{i.formation_intitule || i.formation_nom}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{i.employe_prenom} {i.employe_nom}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{i.created_at ? new Date(i.created_at).toLocaleDateString('fr-FR') : ''}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{i.created_at ? dateUtils.format(i.created_at) : ''}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { storageUtils } from '../utils/helpers';
+import { api } from '../services/api';
 
 const ADMIN_SESSION_KEY = 'admin_session';
 const ADMIN_CREDENTIALS = {
@@ -27,7 +28,7 @@ export function AdminAuthProvider({ children }) {
   // Vérifier l'authentification au démarrage
   useEffect(() => {
     const savedSession = storageUtils.get(ADMIN_SESSION_KEY);
-    if (savedSession && savedSession.authenticated) {
+    if (savedSession && savedSession.authenticated && savedSession.token) {
       // Vérifier si la session n'a pas expiré (24h)
       const sessionTime = new Date(savedSession.timestamp);
       const now = new Date();
@@ -39,23 +40,56 @@ export function AdminAuthProvider({ children }) {
         // Session expirée
         storageUtils.remove(ADMIN_SESSION_KEY);
       }
+    } else if (savedSession && !savedSession.token) {
+      // Ancienne session sans token → forcer reconnexion pour obtenir un JWT
+      storageUtils.remove(ADMIN_SESSION_KEY);
     }
     setLoading(false);
   }, []);
 
   // Connexion admin
-  const login = (username, password) => {
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-      const session = {
-        authenticated: true,
-        timestamp: new Date().toISOString(),
-        username
-      };
-      storageUtils.set(ADMIN_SESSION_KEY, session);
-      setIsAuthenticated(true);
-      return { success: true };
-    } else {
+  const login = async (username, password) => {
+    try {
+      // Try server-side login to obtain a JWT
+      const response = await api.post('/admin/login', { username, password });
+      if (response?.data?.success && response?.data?.token) {
+        const session = {
+          authenticated: true,
+          timestamp: new Date().toISOString(),
+          username: response.data.username || username,
+          token: response.data.token,
+        };
+        storageUtils.set(ADMIN_SESSION_KEY, session);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+
+      // Fallback to local static creds if server route not available
+      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        const session = {
+          authenticated: true,
+          timestamp: new Date().toISOString(),
+          username
+        };
+        storageUtils.set(ADMIN_SESSION_KEY, session);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+
       return { success: false, error: 'Identifiants incorrects' };
+    } catch (err) {
+      // Fallback to local static if API fails
+      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        const session = {
+          authenticated: true,
+          timestamp: new Date().toISOString(),
+          username
+        };
+        storageUtils.set(ADMIN_SESSION_KEY, session);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+      return { success: false, error: err?.message || 'Erreur de connexion' };
     }
   };
 

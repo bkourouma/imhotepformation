@@ -8,6 +8,7 @@ import FormField, { Input } from '../../components/shared/FormField';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { seancesService, formationsService } from '../../services/api';
+import { dateUtils } from '../../utils/helpers';
 
 const SeanceForm = () => {
   const navigate = useNavigate();
@@ -67,8 +68,8 @@ const SeanceForm = () => {
         setValue('formation_id', seance.formation_id);
         setValue('intitule', seance.description || seance.intitule); // Map description to intitule
         setValue('lieu', seance.lieu);
-        setValue('date_debut', seance.date_debut?.slice(0, 16)); // Format for datetime-local
-        setValue('date_fin', seance.date_fin?.slice(0, 16));
+        setValue('date_debut', dateUtils.toDateTimeInputValue(seance.date_debut));
+        setValue('date_fin', dateUtils.toDateTimeInputValue(seance.date_fin));
         setValue('duree', seance.duree || 8);
         setValue('capacite', seance.capacite_max || seance.capacite); // Map capacite_max to capacite
       }

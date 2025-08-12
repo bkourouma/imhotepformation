@@ -3,7 +3,8 @@ import { db } from '../database/database.js';
 export class Seance {
   static getAll(filters = {}) {
     let query = `
-      SELECT s.*, f.intitule as formation_nom, f.cible as formation_cible
+      SELECT s.*, f.intitule as formation_nom, f.cible as formation_cible,
+             (SELECT COUNT(*) FROM groupes g WHERE g.seance_id = s.id) as groupes_count
       FROM seances s
       JOIN formations f ON s.formation_id = f.id
       WHERE 1=1
@@ -40,7 +41,8 @@ export class Seance {
 
   static getByFormation(formationId) {
     const stmt = db.prepare(`
-      SELECT s.*
+      SELECT s.*, 
+             (SELECT COUNT(*) FROM groupes g WHERE g.seance_id = s.id) as groupes_count
       FROM seances s
       WHERE s.formation_id = ?
       ORDER BY s.date_debut ASC

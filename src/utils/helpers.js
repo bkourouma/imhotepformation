@@ -47,6 +47,16 @@ export const dateUtils = {
     return format(dateObj, 'yyyy-MM-dd');
   },
 
+  toDateTimeInputValue: (date) => {
+    if (!date) return '';
+    
+    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+    
+    if (!isValid(dateObj)) return '';
+    
+    return format(dateObj, 'yyyy-MM-dd\'T\'HH:mm');
+  },
+
   isInFuture: (date) => {
     if (!date) return false;
     

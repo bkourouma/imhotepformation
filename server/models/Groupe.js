@@ -62,9 +62,11 @@ export class Groupe {
     if (!groupe) return null;
 
     const participantsStmt = db.prepare(`
-      SELECT p.*, e.nom, e.prenom, e.email, e.fonction, e.telephone, e.entreprise_id
+      SELECT p.*, e.nom, e.prenom, e.email, e.fonction, e.telephone, e.entreprise_id,
+             ent.raison_sociale as entreprise_nom
       FROM participants p
       JOIN employes e ON p.employe_id = e.id
+      LEFT JOIN entreprises ent ON e.entreprise_id = ent.id
       WHERE p.groupe_id = ?
       ORDER BY e.nom, e.prenom
     `);

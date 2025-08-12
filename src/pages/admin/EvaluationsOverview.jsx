@@ -20,6 +20,7 @@ import Card, { CardHeader, CardTitle, CardContent } from '../../components/share
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
+import { dateUtils } from '../../utils/helpers';
 
 export default function AdminEvaluationsOverview() {
   const { isAuthenticated } = useAdminAuth();
@@ -470,7 +471,7 @@ export default function AdminEvaluationsOverview() {
                             <div>
                               <span className="text-gray-500">Date:</span>
                               <span className="ml-2 font-medium">
-                                {new Date(attempt.created_at).toLocaleDateString('fr-FR')}
+                                {dateUtils.format(attempt.created_at)}
                               </span>
                             </div>
                           </div>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Save } from 'lucide-react';
@@ -6,6 +6,7 @@ import Button from '../../components/shared/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/shared/Card';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
+import SuccessMessage from '../../components/shared/SuccessMessage';
 import FormField, { Input, Textarea } from '../../components/shared/FormField';
 import { useApi, useCrud } from '../../hooks/useApi';
 import { formationsService } from '../../services/api';
@@ -14,6 +15,7 @@ export default function FormationForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Récupération des données pour l'édition
   const { data: formation, loading, error } = useApi(
@@ -54,10 +56,16 @@ export default function FormationForm() {
     try {
       if (isEdit) {
         await update(id, data);
+        setSuccessMessage('Formation modifiée avec succès !');
       } else {
         await create(data);
+        setSuccessMessage('Formation créée avec succès !');
       }
-      navigate('/formations');
+      
+      // Naviguer après un court délai pour permettre à l'utilisateur de voir le message
+      setTimeout(() => {
+        navigate('.');
+      }, 1500);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
     }
@@ -97,7 +105,7 @@ export default function FormationForm() {
       <div className="flex items-center gap-4">
         <Button
           as={Link}
-          to={isEdit ? `/formations/${id}` : '/formations'}
+          to={isEdit ? `${id}` : '.'}
           variant="ghost"
           size="sm"
           className="flex items-center gap-2"
@@ -123,6 +131,15 @@ export default function FormationForm() {
         <ErrorMessage
           error={saveError}
           title="Erreur lors de la sauvegarde"
+        />
+      )}
+
+      {/* Messages de succès */}
+      {successMessage && (
+        <SuccessMessage
+          message={successMessage}
+          onDismiss={() => setSuccessMessage('')}
+          title="Succès"
         />
       )}
 
@@ -225,7 +242,7 @@ export default function FormationForm() {
         <div className="flex justify-end gap-3">
           <Button
             as={Link}
-            to={isEdit ? `/formations/${id}` : '/formations'}
+            to={isEdit ? `${id}` : '.'}
             variant="secondary"
           >
             Annuler

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEntrepriseAuth } from '../../hooks/useEntrepriseAuth';
 import { Card, Button, LoadingSpinner } from '../../components/shared';
 import { api } from '../../services/api';
+import { dateUtils } from '../../utils/helpers';
 import { BarChart3, Users, BookOpen } from 'lucide-react';
 
 const EntrepriseDashboard = () => {
@@ -257,7 +258,7 @@ const EntrepriseDashboard = () => {
                         {inscription.formation_intitule}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(inscription.created_at).toLocaleDateString('fr-FR')}
+                        {dateUtils.format(inscription.created_at)}
                       </td>
                     </tr>
                   ))}

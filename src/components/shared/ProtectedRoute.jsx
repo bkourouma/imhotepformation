@@ -24,7 +24,7 @@ export default function ProtectedRoute({ children }) {
   if (shouldRedirectToCompanySelection) {
     // Do NOT apply for entreprise portal routes
     if (!pathname.startsWith('/entreprise')) {
-      return <Navigate to="/company-selection" replace />;
+      return <Navigate to="/" replace />;
     }
   }
 

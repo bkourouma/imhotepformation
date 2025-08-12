@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCompanySession } from '../../hooks/useCompanySession';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { seancesService } from '../../services/api';
@@ -12,10 +12,15 @@ import ErrorMessage from '../../components/shared/ErrorMessage';
 import ExportButton from '../../components/shared/ExportButton';
 import { Plus, Search, Edit, Trash2, Eye, Calendar, Clock } from 'lucide-react';
 import { columnConfigs } from '../../utils/excelExport';
+import { dateUtils } from '../../utils/helpers';
 
 const SeancesList = () => {
   const { selectedCompany } = useCompanySession();
   const { isAuthenticated: isAdmin } = useAdminAuth();
+  const location = useLocation();
+  
+  // Determine if we're in admin section
+  const isAdminSection = location.pathname.startsWith('/admin');
   const [seances, setSeances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,13 +69,16 @@ const SeancesList = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return dateUtils.format(date, 'dd/MM/yyyy');
+  };
+
+  // Helper functions for route generation
+  const getSeanceDetailRoute = (seanceId) => {
+    return isAdminSection ? `/admin/seances/${seanceId}` : `/seances/${seanceId}`;
+  };
+
+  const getSeanceEditRoute = (seanceId) => {
+    return isAdminSection ? `/admin/seances/${seanceId}/edit` : `/seances/${seanceId}/edit`;
   };
 
   const columns = [
@@ -123,14 +131,14 @@ const SeancesList = () => {
       label: 'Actions',
       render: (value, seance) => seance ? (
         <div className="flex gap-2">
-          <Link to={`/seances/${seance.id}`}>
+          <Link to={getSeanceDetailRoute(seance.id)}>
             <Button variant="outline" size="sm">
               <Eye className="w-4 h-4" />
             </Button>
           </Link>
           {isAdmin && (
             <>
-              <Link to={`/seances/${seance.id}/edit`}>
+              <Link to={getSeanceEditRoute(seance.id)}>
                 <Button variant="outline" size="sm">
                   <Edit className="w-4 h-4" />
                 </Button>
@@ -181,7 +189,7 @@ const SeancesList = () => {
             }}
           />
           {isAdmin && (
-            <Button as={Link} to="/admin/seances/new" className="flex items-center gap-2">
+            <Button as={Link} to={isAdminSection ? "/admin/seances/new" : "/seances/new"} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Nouvelle séance
             </Button>

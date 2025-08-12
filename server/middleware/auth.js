@@ -77,6 +77,59 @@ export const verifyEmploye = async (req, res, next) => {
   }
 };
 
+// Middleware to verify admin authentication
+export const verifyAdmin = (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return res.status(401).json({ error: 'Accès refusé. Token manquant.' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    if (decoded.type !== 'admin') {
+      return res.status(403).json({ error: 'Accès refusé. Type d\'utilisateur incorrect.' });
+    }
+
+    req.admin = { username: decoded.username };
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Token invalide.' });
+  }
+};
+
+// Middleware allowing either admin or employe tokens
+export const verifyAdminOrEmploye = (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return res.status(401).json({ error: 'Accès refusé. Token manquant.' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    if (decoded.type === 'admin') {
+      req.admin = { username: decoded.username };
+      return next();
+    }
+
+    if (decoded.type === 'employe') {
+      const employe = Employe.getById(decoded.id);
+      if (!employe) {
+        return res.status(401).json({ error: 'Employé non trouvé.' });
+      }
+      req.employe = employe;
+      return next();
+    }
+
+    return res.status(403).json({ error: 'Accès refusé. Type d\'utilisateur incorrect.' });
+  } catch (error) {
+    return res.status(401).json({ error: 'Token invalide.' });
+  }
+};
+
 // Generate JWT token for entreprise
 export const generateEntrepriseToken = (entreprise) => {
   return jwt.sign(
@@ -98,6 +151,18 @@ export const generateEmployeToken = (employe) => {
       email: employe.email,
       type: 'employe',
       entreprise_id: employe.entreprise_id
+    },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+};
+
+// Generate JWT token for admin
+export const generateAdminToken = (username) => {
+  return jwt.sign(
+    {
+      username,
+      type: 'admin'
     },
     JWT_SECRET,
     { expiresIn: '24h' }

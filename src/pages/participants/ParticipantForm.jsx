@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useCompanySession } from '../../hooks/useCompanySession';
 import { useEntrepriseAuth } from '../../hooks/useEntrepriseAuth';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { groupesService, employesService, participantsService, entreprisesService } from '../../services/api';
 import Card from '../../components/shared/Card';
 import Button from '../../components/shared/Button';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
-import { ArrowLeft, Save, Users, Building2 } from 'lucide-react';
+import { ArrowLeft, Save, Users, Building2, CheckCircle } from 'lucide-react';
 
 const ParticipantForm = () => {
   const navigate = useNavigate();
@@ -15,9 +16,11 @@ const ParticipantForm = () => {
   const { groupeId } = useParams();
   const { selectedCompany } = useCompanySession();
   const { isAuthenticated: isEntreprise } = useEntrepriseAuth();
+  const { isAuthenticated: isAdmin } = useAdminAuth();
 
-  // Determine if we're in enterprise portal
+  // Determine context
   const isEntreprisePortal = location.pathname.startsWith('/entreprise');
+  const isAdminPortal = location.pathname.startsWith('/admin');
   // If entreprise portal, block access to add participants
   useEffect(() => {
     if (isEntreprisePortal) {
@@ -34,6 +37,7 @@ const ParticipantForm = () => {
   const [employes, setEmployes] = useState([]);
   const [selectedEmployes, setSelectedEmployes] = useState([]);
   const [existingParticipants, setExistingParticipants] = useState([]);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadInitialData();
@@ -99,6 +103,18 @@ const ParticipantForm = () => {
     }
   };
 
+  const loadExistingParticipants = async () => {
+    try {
+      // Reload existing participants
+      const participantsResponse = await groupesService.getWithParticipants(groupeId);
+      if (participantsResponse && participantsResponse.participants) {
+        setExistingParticipants(participantsResponse.participants);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des participants:', err);
+    }
+  };
+
   const handleEmployeToggle = (employeId) => {
     setSelectedEmployes(prev => {
       if (prev.includes(employeId)) {
@@ -133,9 +149,24 @@ const ParticipantForm = () => {
         present: false
       }));
 
-      await participantsService.createBulk({ participants });
+      const result = await participantsService.createBulk({ participants });
 
-      navigate(isEntreprisePortal ? `/entreprise/groupes/${groupeId}` : `/groupes/${groupeId}`);
+      // Show success message
+      setSuccessMessage(`${selectedEmployes.length} participant(s) ajouté(s) avec succès !`);
+      
+      // Reload existing participants to show the newly added ones
+      await loadExistingParticipants();
+      
+      // Reset form for adding more participants
+      setSelectedEmployes([]);
+      setSelectedEntreprise('');
+      setEmployes([]);
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+
     } catch (err) {
       setError('Erreur lors de la sauvegarde des participants');
       console.error('Erreur:', err);
@@ -155,7 +186,15 @@ const ParticipantForm = () => {
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => navigate(isEntreprisePortal ? `/entreprise/groupes/${groupeId}` : `/groupes/${groupeId}`)}
+            onClick={() => {
+              if (isAdminPortal) {
+                navigate('/admin/groupes');
+              } else if (isEntreprisePortal) {
+                navigate('/entreprise/formations');
+              } else {
+                navigate('/groupes');
+              }
+            }}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour
@@ -177,6 +216,15 @@ const ParticipantForm = () => {
         </div>
 
         {error && <ErrorMessage message={error} />}
+        
+        {successMessage && (
+          <Card>
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <div className="text-green-800 font-medium">{successMessage}</div>
+            </div>
+          </Card>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Enterprise Selector */}
@@ -277,7 +325,15 @@ const ParticipantForm = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate(isEntreprisePortal ? `/entreprise/groupes/${groupeId}` : `/groupes/${groupeId}`)}
+              onClick={() => {
+                if (isAdminPortal) {
+                  navigate('/admin/groupes');
+                } else if (isEntreprisePortal) {
+                  navigate('/entreprise/formations');
+                } else {
+                  navigate('/groupes');
+                }
+              }}
             >
               Annuler
             </Button>

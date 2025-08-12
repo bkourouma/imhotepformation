@@ -11,7 +11,7 @@ export default function Header({ onMenuClick }) {
 
   const handleChangeCompany = () => {
     clearCompany();
-    navigate('/company-selection');
+    navigate('/');
   };
 
   const handleAdminLogout = () => {

@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import { Groupe } from '../models/Groupe.js';
-import { verifyEmploye } from '../middleware/auth.js';
+import { verifyAdminOrEmploye } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -67,6 +67,17 @@ router.get('/', [
   }
 });
 
+// GET /api/groupes/stats - Statistiques des groupes
+router.get('/stats', (req, res) => {
+  try {
+    const stats = Groupe.getStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques des groupes:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques des groupes' });
+  }
+});
+
 // GET /api/groupes/:id - Récupérer un groupe par ID
 router.get('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
@@ -118,7 +129,7 @@ router.get('/:id/participants', [
 
 // POST /api/groupes - Créer un nouveau groupe
 // Only admin/employee endpoints should create groups. Forbid entreprise tokens.
-router.post('/', verifyEmploye, groupeValidation, handleValidationErrors, (req, res) => {
+router.post('/', verifyAdminOrEmploye, groupeValidation, handleValidationErrors, (req, res) => {
   try {
     const groupe = Groupe.create(req.body);
     res.status(201).json(groupe);
@@ -132,7 +143,7 @@ router.post('/', verifyEmploye, groupeValidation, handleValidationErrors, (req, 
 router.put('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide'),
   ...groupeValidation
-], verifyEmploye, handleValidationErrors, (req, res) => {
+], verifyAdminOrEmploye, handleValidationErrors, (req, res) => {
   try {
     const groupe = Groupe.update(req.params.id, req.body);
     
@@ -150,7 +161,7 @@ router.put('/:id', [
 // DELETE /api/groupes/:id - Supprimer un groupe
 router.delete('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
-], verifyEmploye, handleValidationErrors, (req, res) => {
+], verifyAdminOrEmploye, handleValidationErrors, (req, res) => {
   try {
     const success = Groupe.delete(req.params.id);
     
@@ -162,17 +173,6 @@ router.delete('/:id', [
   } catch (error) {
     console.error('Erreur lors de la suppression du groupe:', error);
     res.status(500).json({ error: 'Erreur lors de la suppression du groupe' });
-  }
-});
-
-// GET /api/groupes/stats - Statistiques des groupes
-router.get('/stats', (req, res) => {
-  try {
-    const stats = Groupe.getStats();
-    res.json(stats);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques des groupes:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques des groupes' });
   }
 });
 

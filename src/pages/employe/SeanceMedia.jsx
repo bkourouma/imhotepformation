@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { useEmployeAuth } from '../../hooks/useEmployeAuth.jsx';
 import { employeApi } from '../../services/employeApi.js';
+import { dateUtils } from '../../utils/helpers';
 
 export default function SeanceMedia() {
   const { seanceId } = useParams();
@@ -147,7 +148,7 @@ export default function SeanceMedia() {
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span>
-                        {new Date(seance.date_debut).toLocaleDateString('fr-FR')} - {new Date(seance.date_fin).toLocaleDateString('fr-FR')}
+                        {dateUtils.format(seance.date_debut)} - {dateUtils.format(seance.date_fin)}
                       </span>
                     </div>
                     <div className="flex items-center text-sm text-gray-600">

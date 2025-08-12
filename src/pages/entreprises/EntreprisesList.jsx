@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Mail, Phone } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Plus, Search, Eye, Edit, Trash2, Mail, Phone, Users } from 'lucide-react';
 import Button from '../../components/shared/Button';
 import Card from '../../components/shared/Card';
 import Table from '../../components/shared/Table';
@@ -15,7 +15,11 @@ import { formatUtils, dateUtils } from '../../utils/helpers';
 import { columnConfigs } from '../../utils/excelExport';
 
 export default function EntreprisesList() {
+  const location = useLocation();
   const [deleteModal, setDeleteModal] = useState({ open: false, entreprise: null });
+
+  // Determine if we're in admin context
+  const isAdminContext = location.pathname.startsWith('/admin');
 
   // Hooks pour la recherche et les données
   const { query, setQuery, results, loading: searchLoading } = useSearch(
@@ -72,6 +76,17 @@ export default function EntreprisesList() {
       ),
     },
     {
+      key: 'nombre_employes',
+      title: 'Nombre Employés',
+      sortable: true,
+      render: (value) => (
+        <div className="flex items-center gap-1">
+          <Users className="h-4 w-4 text-gray-400" />
+          <span className="font-medium">{value || 0}</span>
+        </div>
+      ),
+    },
+    {
       key: 'created_at',
       title: 'Inscrite le',
       sortable: true,
@@ -84,7 +99,7 @@ export default function EntreprisesList() {
         <div className="flex items-center gap-2">
           <Button
             as={Link}
-            to={`/entreprises/${entreprise.id}`}
+            to={isAdminContext ? `/admin/entreprises/${entreprise.id}` : `/entreprises/${entreprise.id}`}
             variant="ghost"
             size="sm"
             className="p-1"
@@ -93,7 +108,7 @@ export default function EntreprisesList() {
           </Button>
           <Button
             as={Link}
-            to={`/entreprises/${entreprise.id}/edit`}
+            to={isAdminContext ? `/admin/entreprises/${entreprise.id}/edit` : `/entreprises/${entreprise.id}/edit`}
             variant="ghost"
             size="sm"
             className="p-1"
@@ -155,7 +170,7 @@ export default function EntreprisesList() {
               console.error('Erreur d\'export:', error);
             }}
           />
-          <Button as={Link} to="/entreprises/new" className="flex items-center gap-2">
+          <Button as={Link} to={isAdminContext ? "/admin/entreprises/new" : "/entreprises/new"} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Nouvelle entreprise
           </Button>

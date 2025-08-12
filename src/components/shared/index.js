@@ -2,6 +2,8 @@ export { default as Button } from './Button';
 export { default as Card } from './Card';
 export { default as ErrorMessage } from './ErrorMessage';
 export { default as FormField } from './FormField';
+export { default as FormationSelector } from './FormationSelector';
+export { default as SuccessMessage } from './SuccessMessage';
 export { default as Header } from './Header';
 export { default as Layout } from './Layout';
 export { default as LoadingSpinner } from './LoadingSpinner';
@@ -14,6 +16,7 @@ export { default as Pagination } from './Pagination';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as ProtectedEmployeRoute } from './ProtectedEmployeRoute';
 export { default as ProtectedEntrepriseRoute } from './ProtectedEntrepriseRoute';
+export { default as SeancesPanels } from './SeancesPanels';
 
 export { default as AdminOnlyRoute } from './AdminOnlyRoute';
 export { default as Sidebar } from './Sidebar';

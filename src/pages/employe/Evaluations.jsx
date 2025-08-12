@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { useEmployeAuth } from '../../hooks/useEmployeAuth.jsx';
 import { employeApi } from '../../services/employeApi.js';
+import { dateUtils } from '../../utils/helpers';
 
 export default function Evaluations() {
   const { seanceId } = useParams();
@@ -291,7 +292,7 @@ export default function Evaluations() {
                             </span>
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            {new Date(evaluation.attempts[0].date_debut).toLocaleDateString('fr-FR')}
+                            {dateUtils.format(evaluation.attempts[0].date_debut)}
                           </div>
                         </div>
                       )}

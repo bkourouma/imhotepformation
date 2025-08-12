@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { useEmployeAuth } from '../../hooks/useEmployeAuth.jsx';
 import { employeApi } from '../../services/employeApi.js';
+import { dateUtils } from '../../utils/helpers';
 
 export default function EmployeDashboard() {
   const navigate = useNavigate();
@@ -170,7 +171,7 @@ export default function EmployeDashboard() {
                                   <div className="flex items-center text-sm text-gray-500 mt-1">
                                     <Calendar className="h-4 w-4 mr-1" />
                                     <span>
-                                      {new Date(seance.date_debut).toLocaleDateString('fr-FR')}
+                                      {dateUtils.format(seance.date_debut)}
                                     </span>
                                   </div>
                                   <div className="flex items-center text-sm text-gray-500 mt-1">

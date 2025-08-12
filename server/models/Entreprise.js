@@ -3,7 +3,12 @@ import bcrypt from 'bcrypt';
 
 export class Entreprise {
   static getAll() {
-    const stmt = db.prepare('SELECT * FROM entreprises ORDER BY raison_sociale ASC');
+    const stmt = db.prepare(`
+      SELECT e.*, 
+             (SELECT COUNT(*) FROM employes emp WHERE emp.entreprise_id = e.id) as nombre_employes
+      FROM entreprises e 
+      ORDER BY raison_sociale ASC
+    `);
     return stmt.all();
   }
 

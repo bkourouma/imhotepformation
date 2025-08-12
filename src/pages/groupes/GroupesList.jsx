@@ -11,6 +11,7 @@ import Button from '../../components/shared/Button';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { Plus, Search, Edit, Trash2, Eye, Users, UserPlus, ChevronDown, ChevronRight, Calendar, Clock, MapPin } from 'lucide-react';
+import { dateUtils } from '../../utils/helpers';
 
 const GroupesList = () => {
   const location = useLocation();
@@ -122,13 +123,7 @@ const GroupesList = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return dateUtils.format(date, 'dd/MM/yyyy');
   };
 
   const getStatusBadge = (groupe) => {
@@ -149,21 +144,21 @@ const GroupesList = () => {
     if (isEntreprisePortal) {
       return `/entreprise/groupes/${groupeId}`;
     }
-    return `/groupes/${groupeId}`;
+    return isAdmin ? `/admin/groupes/${groupeId}` : `/groupes/${groupeId}`;
   };
 
   const getParticipantsRoute = (groupeId) => {
     if (isEntreprisePortal) {
       return `/entreprise/groupes/${groupeId}/participants`;
     }
-    return `/groupes/${groupeId}/participants`;
+    return isAdmin ? `/admin/groupes/${groupeId}/participants` : `/groupes/${groupeId}/participants`;
   };
 
   const getEditRoute = (groupeId) => {
     if (isEntreprisePortal) {
       return `/entreprise/groupes/${groupeId}/edit`;
     }
-    return `/groupes/${groupeId}/edit`;
+    return isAdmin ? `/admin/groupes/${groupeId}/edit` : `/groupes/${groupeId}/edit`;
   };
 
   const getNewGroupeRoute = (seanceId) => {

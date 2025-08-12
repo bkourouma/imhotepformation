@@ -59,6 +59,17 @@ router.get('/', [
   }
 });
 
+// GET /api/seances/stats - Statistiques des séances
+router.get('/stats', (req, res) => {
+  try {
+    const stats = Seance.getStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques des séances:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques des séances' });
+  }
+});
+
 // GET /api/seances/:id - Récupérer une séance par ID
 router.get('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
@@ -135,17 +146,6 @@ router.delete('/:id', [
   } catch (error) {
     console.error('Erreur lors de la suppression de la séance:', error);
     res.status(500).json({ error: 'Erreur lors de la suppression de la séance' });
-  }
-});
-
-// GET /api/seances/stats - Statistiques des séances
-router.get('/stats', (req, res) => {
-  try {
-    const stats = Seance.getStats();
-    res.json(stats);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques des séances:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques des séances' });
   }
 });
 

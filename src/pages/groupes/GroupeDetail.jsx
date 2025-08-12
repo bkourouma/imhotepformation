@@ -6,10 +6,12 @@ import Card, { CardHeader, CardTitle, CardContent } from '../../components/share
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import ExportButton from '../../components/shared/ExportButton';
+import Table from '../../components/shared/Table';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useEntrepriseAuth } from '../../hooks/useEntrepriseAuth';
 import { groupesService } from '../../services/api';
 import { columnConfigs } from '../../utils/excelExport';
+import { dateUtils } from '../../utils/helpers';
 
 const GroupeDetail = () => {
   const { id } = useParams();
@@ -52,7 +54,7 @@ const GroupeDetail = () => {
     try {
       await groupesService.delete(id);
       setDeleteModal({ show: false, groupe: null });
-      navigate(isEntreprisePortal ? '/entreprise/formations' : '/groupes');
+      navigate(getBackRoute());
     } catch (err) {
       setError('Erreur lors de la suppression du groupe');
       console.error('Erreur:', err);
@@ -61,17 +63,26 @@ const GroupeDetail = () => {
 
   // Helper function to get back route
   const getBackRoute = () => {
-    return isEntreprisePortal ? '/entreprise/formations' : '/groupes';
+    if (isEntreprisePortal) {
+      return '/entreprise/formations';
+    }
+    return isAdmin ? '/admin/groupes' : '/groupes';
   };
 
   // Helper function to get edit route
   const getEditRoute = () => {
-    return isEntreprisePortal ? `/entreprise/groupes/${id}/edit` : `/groupes/${id}/edit`;
+    if (isEntreprisePortal) {
+      return `/entreprise/groupes/${id}/edit`;
+    }
+    return isAdmin ? `/admin/groupes/${id}/edit` : `/groupes/${id}/edit`;
   };
 
   // Helper function to get participants route
   const getParticipantsRoute = () => {
-    return isEntreprisePortal ? `/entreprise/groupes/${id}/participants` : `/groupes/${id}/participants`;
+    if (isEntreprisePortal) {
+      return `/entreprise/groupes/${id}/participants`;
+    }
+    return isAdmin ? `/admin/groupes/${id}/participants` : `/groupes/${id}/participants`;
   };
 
   const getStatusBadge = (groupe) => {
@@ -229,6 +240,31 @@ const GroupeDetail = () => {
                   <p className="text-gray-900">{groupe.formation_nom || 'Non définie'}</p>
                 </div>
                 
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Enseignant</label>
+                  <p className="text-gray-900">
+                    {groupe.enseignant_prenom && groupe.enseignant_nom 
+                      ? `${groupe.enseignant_prenom} ${groupe.enseignant_nom}`
+                      : 'Non défini'
+                    }
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Date de début</label>
+                    <p className="text-gray-900">
+                      {groupe.date_debut ? dateUtils.formatDateTime(groupe.date_debut) : 'Non définie'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Date de fin</label>
+                    <p className="text-gray-900">
+                      {groupe.date_fin ? dateUtils.formatDateTime(groupe.date_fin) : 'Non définie'}
+                    </p>
+                  </div>
+                </div>
+                
                 {groupe.description && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Description</label>
@@ -285,6 +321,83 @@ const GroupeDetail = () => {
           </Card>
         </div>
       </div>
+
+      {/* Participants List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Liste des participants ({participants.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {participants.length > 0 ? (
+            <Table 
+              columns={[
+                { 
+                  key: 'nom', 
+                  label: 'Nom',
+                  render: (value, row) => (
+                    <div className="font-medium text-gray-900">
+                      {row.prenom} {value}
+                    </div>
+                  )
+                },
+                { 
+                  key: 'fonction', 
+                  label: 'Fonction',
+                  render: (value) => (
+                    <span className="text-gray-700">{value || 'Non définie'}</span>
+                  )
+                },
+                { 
+                  key: 'email', 
+                  label: 'Email',
+                  render: (value) => (
+                    <span className="text-gray-600">{value || 'Non défini'}</span>
+                  )
+                },
+                { 
+                  key: 'telephone', 
+                  label: 'Téléphone',
+                  render: (value) => (
+                    <span className="text-gray-600">{value || 'Non défini'}</span>
+                  )
+                },
+                { 
+                  key: 'entreprise_nom', 
+                  label: 'Entreprise',
+                  render: (value) => (
+                    <span className="text-gray-700">{value || 'Non définie'}</span>
+                  )
+                },
+                { 
+                  key: 'present', 
+                  label: 'Statut',
+                  render: (value) => (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      value 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {value ? 'Présent' : 'Non confirmé'}
+                    </span>
+                  )
+                }
+              ]}
+              data={participants}
+            />
+          ) : (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">Aucun participant inscrit</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Les participants apparaîtront ici une fois qu'ils seront inscrits au groupe.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Delete Modal */}
       {deleteModal.show && (

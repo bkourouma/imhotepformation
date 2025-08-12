@@ -84,7 +84,7 @@ export default function FormationsList() {
         <div className="flex items-center gap-2">
           <Button
             as={Link}
-            to={`/formations/${formation?.id}`}
+            to={`${formation?.id}`}
             variant="ghost"
             size="sm"
             className="p-1"
@@ -93,7 +93,7 @@ export default function FormationsList() {
           </Button>
           <Button
             as={Link}
-            to={`/formations/${formation?.id}/edit`}
+            to={`${formation?.id}/edit`}
             variant="ghost"
             size="sm"
             className="p-1"
@@ -155,7 +155,7 @@ export default function FormationsList() {
               console.error('Erreur d\'export:', error);
             }}
           />
-          <Button as={Link} to="/formations/new" className="flex items-center gap-2">
+          <Button as={Link} to="new" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Nouvelle formation
           </Button>

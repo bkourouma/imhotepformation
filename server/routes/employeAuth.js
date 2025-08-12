@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { Employe } from '../models/Employe.js';
+import { generateEmployeToken } from '../middleware/auth.js';
 import { Seance } from '../models/Seance.js';
 import { SeanceMedia } from '../models/SeanceMedia.js';
 import { MediaAccessHistory } from '../models/MediaAccessHistory.js';
@@ -74,13 +75,16 @@ router.post('/login', [
       });
     }
 
-    // Return employee data without password
+    // Return employee data without password and issue JWT
     const { password: _, ...employeData } = employe;
     console.log('✅ Connexion réussie pour:', email);
+
+    const token = generateEmployeToken(employe);
 
     res.json({
       success: true,
       employe: employeData,
+      token,
       message: 'Connexion réussie'
     });
   } catch (error) {

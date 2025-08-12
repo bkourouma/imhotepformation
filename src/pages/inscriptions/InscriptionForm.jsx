@@ -170,9 +170,9 @@ export default function InscriptionForm() {
 
       if (!isEdit) {
         // Rediriger vers la liste des inscriptions après création
-        navigate('/inscriptions');
+        navigate('.');
       } else {
-        navigate('/inscriptions');
+        navigate('.');
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
@@ -200,7 +200,7 @@ export default function InscriptionForm() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Inscription non trouvée</p>
-        <Button as={Link} to="/inscriptions" className="mt-4">
+        <Button as={Link} to="." className="mt-4">
           Retour aux inscriptions
         </Button>
       </div>
@@ -217,7 +217,7 @@ export default function InscriptionForm() {
       <div className="flex items-center gap-4">
         <Button
           as={Link}
-          to={isEdit ? `/inscriptions/${id}` : '/inscriptions'}
+          to={isEdit ? `${id}` : '.'}
           variant="ghost"
           size="sm"
           className="flex items-center gap-2"
@@ -276,7 +276,7 @@ export default function InscriptionForm() {
                       </div>
                       <Button
                         as={Link}
-                        to="/company-selection"
+                        to="/"
                         variant="ghost"
                         size="sm"
                       >
@@ -287,7 +287,7 @@ export default function InscriptionForm() {
                 ) : (
                   <div className="text-center py-4">
                     <p className="text-gray-500 mb-4">Aucune entreprise sélectionnée</p>
-                    <Button as={Link} to="/company-selection">
+                    <Button as={Link} to="/">
                       Sélectionner une entreprise
                     </Button>
                   </div>

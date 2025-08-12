@@ -7,6 +7,7 @@ import Card, { CardHeader, CardTitle, CardContent } from '../../components/share
 import FormField, { Input } from '../../components/shared/FormField';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
+import SuccessMessage from '../../components/shared/SuccessMessage';
 import { useCompanySession } from '../../hooks/useCompanySession.jsx';
 import { employesService, entreprisesService } from '../../services/api';
 
@@ -16,6 +17,7 @@ export default function EmployeForm() {
   const { selectedCompany } = useCompanySession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [entreprises, setEntreprises] = useState([]);
   const [generatedPassword, setGeneratedPassword] = useState('');
 
@@ -99,11 +101,16 @@ export default function EmployeForm() {
 
       if (isEditing) {
         await employesService.update(id, data);
+        setSuccessMessage('Employé modifié avec succès !');
       } else {
         await employesService.create(data);
+        setSuccessMessage('Employé créé avec succès !');
       }
 
-      navigate('/employes');
+      // Naviguer après un court délai pour permettre à l'utilisateur de voir le message
+      setTimeout(() => {
+        navigate('.');
+      }, 1500);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -133,7 +140,7 @@ export default function EmployeForm() {
         </div>
         <Button
           as="button"
-          onClick={() => navigate('/employes')}
+          onClick={() => navigate('.')}
           variant="secondary"
           className="flex items-center gap-2"
         >
@@ -165,6 +172,14 @@ export default function EmployeForm() {
               error={error} 
               onDismiss={() => setError('')}
               title="Erreur lors de la sauvegarde"
+            />
+          )}
+
+          {successMessage && (
+            <SuccessMessage
+              message={successMessage}
+              onDismiss={() => setSuccessMessage('')}
+              title="Succès"
             />
           )}
 
@@ -339,7 +354,7 @@ export default function EmployeForm() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => navigate('/employes')}
+                onClick={() => navigate('.')}
                 disabled={isSubmitting}
               >
                 Annuler

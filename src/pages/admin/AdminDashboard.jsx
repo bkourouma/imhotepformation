@@ -14,6 +14,8 @@ import Card, { CardHeader, CardTitle, CardContent } from '../../components/share
 import Button from '../../components/shared/Button';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
+import FormationSelector from '../../components/shared/FormationSelector';
+import SeancesPanels from '../../components/shared/SeancesPanels';
 import { dashboardService } from '../../services/api';
 import { dateUtils, formatUtils } from '../../utils/helpers';
 
@@ -65,6 +67,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedFormation, setSelectedFormation] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -102,8 +105,6 @@ export default function AdminDashboard() {
   }
 
   const stats = data?.stats || {};
-  const employesRecents = data?.employesRecents || [];
-  const formationsPopulaires = data?.formationsPopulaires || [];
 
   return (
     <div className="space-y-6">
@@ -157,117 +158,21 @@ export default function AdminDashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Employés récents */}
+      {/* Formation Selector and Seances */}
+      <div className="space-y-6">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Employés récents</CardTitle>
-              <Button 
-                as={Link} 
-                to="/employes" 
-                variant="ghost" 
-                size="sm"
-              >
-                Voir tout
-              </Button>
-            </div>
+            <CardTitle>Explorer les formations et séances</CardTitle>
           </CardHeader>
           <CardContent>
-            {employesRecents.length > 0 ? (
-              <div className="space-y-4">
-                {employesRecents.map((employe) => (
-                  <div key={employe.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {employe.prenom} {employe.nom}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {employe.entreprise_nom}
-                      </p>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <UserCheck className="h-3 w-3" />
-                          {employe.fonction}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {dateUtils.format(employe.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Button
-                        as={Link}
-                        to={`/employes/${employe.id}`}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        Voir
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                Aucun employé récent
-              </p>
-            )}
+            <FormationSelector
+              selectedFormation={selectedFormation}
+              onFormationChange={setSelectedFormation}
+            />
           </CardContent>
         </Card>
 
-        {/* Formations populaires */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Formations populaires</CardTitle>
-              <Button 
-                as={Link} 
-                to="/admin/formations" 
-                variant="ghost" 
-                size="sm"
-              >
-                Voir tout
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {formationsPopulaires.length > 0 ? (
-              <div className="space-y-4">
-                {formationsPopulaires.map((formation) => (
-                  <div key={formation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {formation.intitule}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {formatUtils.truncate(formation.cible, 60)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-orange-600">
-                        {formation.nombre_participants || 0} participants
-                      </p>
-                      <Button
-                        as={Link}
-                        to={`/admin/formations/${formation.id}`}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        Gérer
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                Aucune formation disponible
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <SeancesPanels formation={selectedFormation} />
       </div>
 
       {/* Actions rapides */}

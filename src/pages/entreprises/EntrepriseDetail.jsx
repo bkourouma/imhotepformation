@@ -1,12 +1,12 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Mail, Phone, Building2, Calendar, Users } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Mail, Phone, Building2, Calendar, Users, UserPlus } from 'lucide-react';
 import Button from '../../components/shared/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/shared/Card';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { ConfirmModal } from '../../components/shared/Modal';
 import { useApi, useCrud } from '../../hooks/useApi';
-import { entreprisesService } from '../../services/api';
+import { entreprisesService, employesService } from '../../services/api';
 import { dateUtils, formatUtils } from '../../utils/helpers';
 import { useState } from 'react';
 
@@ -21,13 +21,19 @@ export default function EntrepriseDetail() {
     [id]
   );
 
+  // Récupération des employés
+  const { data: employes, loading: employesLoading, error: employesError } = useApi(
+    () => employesService.getByEntreprise(id),
+    [id]
+  );
+
   const { remove, loading: deleteLoading } = useCrud(entreprisesService);
 
   // Gestion de la suppression
   const handleDelete = async () => {
     try {
       await remove(id);
-      navigate('/entreprises');
+      navigate('.');
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
     }
@@ -54,17 +60,14 @@ export default function EntrepriseDetail() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Entreprise non trouvée</p>
-        <Button as={Link} to="/entreprises" className="mt-4">
+        <Button as={Link} to="." className="mt-4">
           Retour aux entreprises
         </Button>
       </div>
     );
   }
 
-  const inscriptions = entreprise.inscriptions || [];
-  const totalParticipants = inscriptions.reduce((sum, inscription) =>
-    sum + inscription.nombre_participants, 0
-  );
+
 
   return (
     <div className="space-y-6">
@@ -73,7 +76,7 @@ export default function EntrepriseDetail() {
         <div className="flex items-center gap-4">
           <Button
             as={Link}
-            to="/entreprises"
+            to="."
             variant="ghost"
             size="sm"
             className="flex items-center gap-2"
@@ -94,7 +97,7 @@ export default function EntrepriseDetail() {
         <div className="flex items-center gap-3">
           <Button
             as={Link}
-            to={`/entreprises/${id}/edit`}
+            to={`${id}/edit`}
             variant="secondary"
             className="flex items-center gap-2"
           >
@@ -157,54 +160,73 @@ export default function EntrepriseDetail() {
             </CardContent>
           </Card>
 
-          {/* Historique des inscriptions */}
+          {/* Liste des employés */}
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Historique des inscriptions</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Employés ({employes?.length || 0})
+                </CardTitle>
                 <Button
                   as={Link}
-                  to={`/inscriptions/new?entreprise_id=${id}`}
+                  to={`/admin/employes/new?entreprise_id=${id}`}
                   variant="primary"
                   size="sm"
                   className="flex items-center gap-2"
                 >
-                  <Calendar className="h-4 w-4" />
-                  Nouvelle inscription
+                  <UserPlus className="h-4 w-4" />
+                  Ajouter un employé
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {inscriptions.length > 0 ? (
+              {employesLoading ? (
+                <div className="flex justify-center py-8">
+                  <LoadingSpinner size="sm" />
+                </div>
+              ) : employesError ? (
+                <ErrorMessage 
+                  error={employesError} 
+                  title="Erreur lors du chargement des employés"
+                />
+              ) : employes && employes.length > 0 ? (
                 <div className="space-y-4">
-                  {inscriptions.map((inscription) => (
-                    <div key={inscription.id} className="border border-gray-200 rounded-lg p-4">
+                  {employes.map((employe) => (
+                    <div key={employe.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
-                            {inscription.formation_intitule}
+                            {employe.prenom} {employe.nom}
                           </h4>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 mt-1">
+                            {employe.fonction}
+                          </p>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                             <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {inscription.nombre_participants} participants
+                              <Mail className="h-3 w-3" />
+                              {employe.email}
                             </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {dateUtils.format(inscription.date_souhaitee)}
-                            </span>
+                            {employe.telephone && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {employe.telephone}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Inscrite le {dateUtils.format(inscription.created_at)}
+                          <p className="text-xs text-gray-400 mt-2">
+                            Créé le {dateUtils.format(employe.created_at)}
                           </p>
                         </div>
                         <Button
                           as={Link}
-                          to={`/inscriptions/${inscription.id}`}
+                          to={`/admin/employes/${employe.id}/edit`}
                           variant="ghost"
                           size="sm"
+                          className="flex items-center gap-1"
                         >
-                          Voir détail
+                          <Edit className="h-3 w-3" />
+                          Modifier
                         </Button>
                       </div>
                     </div>
@@ -212,21 +234,22 @@ export default function EntrepriseDetail() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-500 mb-4">
-                    Aucune inscription pour cette entreprise
+                    Aucun employé dans cette entreprise
                   </p>
                   <Button
                     as={Link}
-                    to={`/inscriptions/new?entreprise_id=${id}`}
+                    to={`/admin/employes/new?entreprise_id=${id}`}
                     variant="primary"
                   >
-                    Créer la première inscription
+                    Ajouter le premier employé
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
+
         </div>
 
         {/* Sidebar avec statistiques */}
@@ -240,20 +263,11 @@ export default function EntrepriseDetail() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Inscriptions</span>
-                  </div>
-                  <span className="font-semibold">
-                    {inscriptions.length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Participants</span>
+                    <span className="text-sm text-gray-600">Employés</span>
                   </div>
                   <span className="font-semibold">
-                    {totalParticipants}
+                    {employes?.length || 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -263,6 +277,15 @@ export default function EntrepriseDetail() {
                   </div>
                   <span className="font-semibold text-sm">
                     {dateUtils.formatRelative(entreprise.created_at)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">Date d'inscription</span>
+                  </div>
+                  <span className="font-semibold text-sm">
+                    {dateUtils.format(entreprise.created_at)}
                   </span>
                 </div>
               </div>
@@ -278,11 +301,12 @@ export default function EntrepriseDetail() {
               <div className="space-y-2">
                 <Button
                   as={Link}
-                  to={`/inscriptions/new?entreprise_id=${id}`}
+                  to={`/admin/employes/new?entreprise_id=${id}`}
                   variant="primary"
-                  className="w-full justify-center"
+                  className="w-full justify-center flex items-center gap-2"
                 >
-                  Nouvelle inscription
+                  <UserPlus className="h-4 w-4" />
+                  Ajouter un Employé
                 </Button>
                 <Button
                   as={Link}

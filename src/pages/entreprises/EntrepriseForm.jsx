@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Save, Building2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import Button from '../../components/shared/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/shared/Card';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
+import SuccessMessage from '../../components/shared/SuccessMessage';
 import FormField, { Input } from '../../components/shared/FormField';
 import { useApi, useCrud } from '../../hooks/useApi';
 import { entreprisesService } from '../../services/api';
@@ -15,6 +16,7 @@ export default function EntrepriseForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Récupération des données pour l'édition
   const { data: entreprise, loading, error } = useApi(
@@ -53,10 +55,16 @@ export default function EntrepriseForm() {
     try {
       if (isEdit) {
         await update(id, data);
+        setSuccessMessage('Entreprise modifiée avec succès !');
       } else {
         await create(data);
+        setSuccessMessage('Entreprise créée avec succès !');
       }
-      navigate('/entreprises');
+      
+      // Naviguer après un court délai pour permettre à l'utilisateur de voir le message
+      setTimeout(() => {
+        navigate('.');
+      }, 1500);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
     }
@@ -83,7 +91,7 @@ export default function EntrepriseForm() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Entreprise non trouvée</p>
-        <Button as={Link} to="/entreprises" className="mt-4">
+        <Button as={Link} to="." className="mt-4">
           Retour aux entreprises
         </Button>
       </div>
@@ -96,7 +104,7 @@ export default function EntrepriseForm() {
       <div className="flex items-center gap-4">
         <Button
           as={Link}
-          to={isEdit ? `/entreprises/${id}` : '/entreprises'}
+          to={isEdit ? `${id}` : '.'}
           variant="ghost"
           size="sm"
           className="flex items-center gap-2"
@@ -122,6 +130,15 @@ export default function EntrepriseForm() {
         <ErrorMessage
           error={saveError}
           title="Erreur lors de la sauvegarde"
+        />
+      )}
+
+      {/* Messages de succès */}
+      {successMessage && (
+        <SuccessMessage
+          message={successMessage}
+          onDismiss={() => setSuccessMessage('')}
+          title="Succès"
         />
       )}
 

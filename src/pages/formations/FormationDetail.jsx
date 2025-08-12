@@ -32,7 +32,7 @@ export default function FormationDetail() {
   const handleDelete = async () => {
     try {
       await remove(id);
-      navigate('/formations');
+      navigate('.');
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
     }
@@ -59,7 +59,7 @@ export default function FormationDetail() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Formation non trouvée</p>
-        <Button as={Link} to="/formations" className="mt-4">
+        <Button as={Link} to="." className="mt-4">
           Retour aux formations
         </Button>
       </div>
@@ -77,7 +77,7 @@ export default function FormationDetail() {
         <div className="flex items-center gap-4">
           <Button
             as={Link}
-            to="/formations"
+            to="."
             variant="ghost"
             size="sm"
             className="flex items-center gap-2"
@@ -98,7 +98,7 @@ export default function FormationDetail() {
         <div className="flex items-center gap-3">
           <Button
             as={Link}
-            to={`/formations/${id}/edit`}
+            to={`${id}/edit`}
             variant="secondary"
             className="flex items-center gap-2"
           >

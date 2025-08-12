@@ -51,7 +51,8 @@ export function EmployeAuthProvider({ children }) {
         const session = {
           authenticated: true,
           timestamp: new Date().toISOString(),
-          employe: result.employe
+          employe: result.employe,
+          token: result.token
         };
         storageUtils.set(EMPLOYE_SESSION_KEY, session);
         setIsAuthenticated(true);

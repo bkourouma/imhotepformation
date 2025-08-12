@@ -27,7 +27,7 @@ export default function InscriptionDetail() {
   const handleDelete = async () => {
     try {
       await remove(id);
-      navigate('/inscriptions');
+      navigate('.');
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
     }
@@ -54,7 +54,7 @@ export default function InscriptionDetail() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Inscription non trouvée</p>
-        <Button as={Link} to="/inscriptions" className="mt-4">
+        <Button as={Link} to="." className="mt-4">
           Retour aux inscriptions
         </Button>
       </div>
@@ -68,7 +68,7 @@ export default function InscriptionDetail() {
         <div className="flex items-center gap-4">
           <Button
             as={Link}
-            to="/inscriptions"
+            to="."
             variant="ghost"
             size="sm"
             className="flex items-center gap-2"
@@ -89,7 +89,7 @@ export default function InscriptionDetail() {
         <div className="flex items-center gap-3">
           <Button
             as={Link}
-            to={`/inscriptions/${id}/edit`}
+            to={`${id}/edit`}
             variant="secondary"
             className="flex items-center gap-2"
           >

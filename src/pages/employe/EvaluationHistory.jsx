@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { useEmployeAuth } from '../../hooks/useEmployeAuth.jsx';
 import { employeApi } from '../../services/employeApi.js';
+import { dateUtils } from '../../utils/helpers';
 
 export default function EvaluationHistory() {
   const { seanceId } = useParams();
@@ -229,7 +230,7 @@ export default function EvaluationHistory() {
                           <div>
                             <span className="text-gray-500">Date:</span>
                             <span className="ml-2 font-semibold">
-                              {new Date(attempt.date_debut).toLocaleDateString('fr-FR')}
+                              {dateUtils.format(attempt.date_debut)}
                             </span>
                           </div>
                         </div>

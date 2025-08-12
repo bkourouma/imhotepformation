@@ -22,6 +22,7 @@ import entrepriseAuthRoutes from './routes/entrepriseAuth.js';
 import evaluationsRoutes from './routes/evaluations.js';
 import notificationsRoutes from './routes/notifications.js';
 import settingsRoutes from './routes/settings.js';
+import adminAuthRoutes from './routes/adminAuth.js';
 import { Entreprise } from './models/Entreprise.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -122,6 +123,7 @@ app.use('/api/entreprise', entrepriseAuthRoutes);
 app.use('/api/evaluations', evaluationsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/admin', adminAuthRoutes);
 
 // Route de test
 app.get('/api/health', (req, res) => {

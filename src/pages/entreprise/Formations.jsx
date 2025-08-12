@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useEntrepriseAuth } from '../../hooks/useEntrepriseAuth';
 import { formationsService, inscriptionsService, participantsService } from '../../services/api';
+import { dateUtils } from '../../utils/helpers';
 import { Card, Button, LoadingSpinner, ErrorMessage } from '../../components/shared';
 import { exportToExcel, columnConfigs, formatters } from '../../utils/excelExport';
 
@@ -138,8 +139,8 @@ export default function EntrepriseFormations() {
                             <td className="px-4 py-2 text-sm text-gray-900">{i.seance_description || '-'}</td>
                             <td className="px-4 py-2 text-sm text-gray-700">{i.groupe_libelle || '-'}</td>
                             <td className="px-4 py-2 text-sm text-gray-700">{i.prenom} {i.nom}</td>
-                            <td className="px-4 py-2 text-sm text-gray-500">{i.date_debut ? new Date(i.date_debut).toLocaleString('fr-FR') : ''}</td>
-                            <td className="px-4 py-2 text-sm text-gray-500">{i.date_fin ? new Date(i.date_fin).toLocaleString('fr-FR') : ''}</td>
+                            <td className="px-4 py-2 text-sm text-gray-500">{i.date_debut ? dateUtils.formatDateTime(i.date_debut) : ''}</td>
+                            <td className="px-4 py-2 text-sm text-gray-500">{i.date_fin ? dateUtils.formatDateTime(i.date_fin) : ''}</td>
                             <td className="px-4 py-2 text-sm text-gray-700">{i.present ? 'Oui' : 'Non'}</td>
                           </tr>
                         ))}

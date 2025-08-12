@@ -8,6 +8,7 @@ import FormField, { Input, Textarea } from '../../components/shared/FormField';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { groupesService, seancesService, enseignantsService, formationsService } from '../../services/api';
+import { dateUtils } from '../../utils/helpers';
 
 const GroupeForm = () => {
   const navigate = useNavigate();
@@ -38,8 +39,8 @@ const GroupeForm = () => {
       libelle: '',
       capacite_max: 20,
       description: '',
-      date_debut: '',
-      date_fin: '',
+      date_debut: '2025-01-01T08:00',
+      date_fin: '2025-01-01T17:00',
       enseignant_id: ''
     }
   });
@@ -142,8 +143,8 @@ const GroupeForm = () => {
         setValue('libelle', groupe.libelle);
         setValue('capacite_max', groupe.capacite_max);
         setValue('description', groupe.description || '');
-        setValue('date_debut', groupe.date_debut ? groupe.date_debut.slice(0, 16) : '');
-        setValue('date_fin', groupe.date_fin ? groupe.date_fin.slice(0, 16) : '');
+        setValue('date_debut', dateUtils.toDateTimeInputValue(groupe.date_debut));
+        setValue('date_fin', dateUtils.toDateTimeInputValue(groupe.date_fin));
         setValue('enseignant_id', groupe.enseignant_id || '');
       }
     } catch (err) {
@@ -282,7 +283,7 @@ const GroupeForm = () => {
                   </option>
                   {seances.map((seance) => (
                     <option key={seance.id} value={seance.id}>
-                      {seance.description || seance.intitule} - {seance.lieu} ({new Date(seance.date_debut).toLocaleDateString('fr-FR')})
+                      {seance.description || seance.intitule} - {seance.lieu} ({dateUtils.format(seance.date_debut)})
                     </option>
                   ))}
                 </select>
@@ -333,6 +334,7 @@ const GroupeForm = () => {
                   type="datetime-local"
                   {...register('date_debut')}
                   error={!!errors.date_debut}
+                  placeholder="01/01/2025 08:00"
                 />
               </FormField>
 
@@ -345,6 +347,7 @@ const GroupeForm = () => {
                   type="datetime-local"
                   {...register('date_fin')}
                   error={!!errors.date_fin}
+                  placeholder="01/01/2025 17:00"
                 />
               </FormField>
 
@@ -393,6 +396,7 @@ const GroupeForm = () => {
                 type="submit"
                 disabled={loading}
                 className="flex items-center gap-2"
+
               >
                 {loading ? (
                   <LoadingSpinner size="sm" />

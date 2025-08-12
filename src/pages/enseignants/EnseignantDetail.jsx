@@ -7,6 +7,7 @@ import Button from '../../components/shared/Button';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import ErrorMessage from '../../components/shared/ErrorMessage';
 import { ArrowLeft, Edit, Mail, Phone, BookOpen, User, Calendar, Clock, Users, MapPin } from 'lucide-react';
+import { dateUtils } from '../../utils/helpers';
 
 const EnseignantDetail = () => {
   const { id } = useParams();
@@ -37,13 +38,7 @@ const EnseignantDetail = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return dateUtils.format(date, 'dd/MM/yyyy');
   };
 
   const getStatusBadge = (enseignant) => {

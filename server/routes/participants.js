@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import { Participant } from '../models/Participant.js';
-import { verifyEmploye } from '../middleware/auth.js';
+import { verifyAdminOrEmploye } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -69,6 +69,17 @@ router.get('/', [
   }
 });
 
+// GET /api/participants/stats - Statistiques des participants
+router.get('/stats', (req, res) => {
+  try {
+    const stats = Participant.getStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques des participants:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques des participants' });
+  }
+});
+
 // GET /api/participants/:id - Récupérer un participant par ID
 router.get('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
@@ -115,7 +126,7 @@ router.get('/groupe/:groupeId', [
 
 // POST /api/participants - Créer un nouveau participant
 // Forbid entreprise tokens from creating participants; require employee/admin context
-router.post('/', verifyEmploye, participantValidation, handleValidationErrors, (req, res) => {
+router.post('/', verifyAdminOrEmploye, participantValidation, handleValidationErrors, (req, res) => {
   try {
     const participant = Participant.create(req.body);
     res.status(201).json(participant);
@@ -126,7 +137,7 @@ router.post('/', verifyEmploye, participantValidation, handleValidationErrors, (
 });
 
 // POST /api/participants/bulk - Créer plusieurs participants
-router.post('/bulk', verifyEmploye, participantsValidation, handleValidationErrors, (req, res) => {
+router.post('/bulk', verifyAdminOrEmploye, participantsValidation, handleValidationErrors, (req, res) => {
   try {
     const participants = req.body.participants;
     const createdParticipants = [];
@@ -155,7 +166,7 @@ router.post('/bulk', verifyEmploye, participantsValidation, handleValidationErro
 router.put('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide'),
   ...participantValidation
-], verifyEmploye, handleValidationErrors, (req, res) => {
+], verifyAdminOrEmploye, handleValidationErrors, (req, res) => {
   try {
     const participant = Participant.update(req.params.id, req.body);
     
@@ -173,7 +184,7 @@ router.put('/:id', [
 // PUT /api/participants/:id/present - Marquer comme présent
 router.put('/:id/present', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
-], verifyEmploye, handleValidationErrors, (req, res) => {
+], verifyAdminOrEmploye, handleValidationErrors, (req, res) => {
   try {
     const participant = Participant.markPresent(req.params.id);
     
@@ -191,7 +202,7 @@ router.put('/:id/present', [
 // PUT /api/participants/:id/absent - Marquer comme absent
 router.put('/:id/absent', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
-], verifyEmploye, handleValidationErrors, (req, res) => {
+], verifyAdminOrEmploye, handleValidationErrors, (req, res) => {
   try {
     const participant = Participant.markAbsent(req.params.id);
     
@@ -209,7 +220,7 @@ router.put('/:id/absent', [
 // DELETE /api/participants/:id - Supprimer un participant
 router.delete('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
-], verifyEmploye, handleValidationErrors, (req, res) => {
+], verifyAdminOrEmploye, handleValidationErrors, (req, res) => {
   try {
     const success = Participant.delete(req.params.id);
     
@@ -221,17 +232,6 @@ router.delete('/:id', [
   } catch (error) {
     console.error('Erreur lors de la suppression du participant:', error);
     res.status(500).json({ error: 'Erreur lors de la suppression du participant' });
-  }
-});
-
-// GET /api/participants/stats - Statistiques des participants
-router.get('/stats', (req, res) => {
-  try {
-    const stats = Participant.getStats();
-    res.json(stats);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques des participants:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques des participants' });
   }
 });
 
@@ -262,19 +262,6 @@ router.get('/stats/formation/:formationId', [
 });
 
 // Presence management routes
-
-// GET /api/participants/groupe/:groupeId - Get participants for a specific group
-router.get('/groupe/:groupeId', [
-  param('groupeId').isInt({ min: 1 }).withMessage('ID groupe invalide')
-], handleValidationErrors, (req, res) => {
-  try {
-    const participants = Participant.getByGroupe(req.params.groupeId);
-    res.json(participants);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des participants du groupe:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des participants du groupe' });
-  }
-});
 
 // GET /api/participants/formation/:formationId/presence - Get presence for a formation
 router.get('/formation/:formationId/presence', [
@@ -319,7 +306,7 @@ router.get('/groupe/:groupeId/stats', [
 router.put('/:id/presence', [
   param('id').isInt({ min: 1 }).withMessage('ID participant invalide'),
   body('present').isBoolean().withMessage('Le statut de présence doit être un booléen')
-], verifyEmploye, handleValidationErrors, (req, res) => {
+], verifyAdminOrEmploye, handleValidationErrors, (req, res) => {
   try {
     const success = Participant.updatePresence(req.params.id, req.body.present);
 
@@ -339,7 +326,7 @@ router.put('/presence/bulk', [
   body('updates').isArray().withMessage('Les mises à jour doivent être un tableau'),
   body('updates.*.participantId').isInt({ min: 1 }).withMessage('ID participant invalide'),
   body('updates.*.present').isBoolean().withMessage('Le statut de présence doit être un booléen')
-], verifyEmploye, handleValidationErrors, (req, res) => {
+], verifyAdminOrEmploye, handleValidationErrors, (req, res) => {
   try {
     const success = Participant.updateMultiplePresence(req.body.updates);
 

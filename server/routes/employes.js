@@ -61,6 +61,17 @@ router.get('/', [
   }
 });
 
+// GET /api/employes/stats - Statistiques des employés
+router.get('/stats', (req, res) => {
+  try {
+    const stats = Employe.getStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques des employés:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques des employés' });
+  }
+});
+
 // GET /api/employes/:id - Récupérer un employé par ID
 router.get('/:id', [
   param('id').isInt({ min: 1 }).withMessage('ID invalide')
@@ -137,17 +148,6 @@ router.delete('/:id', [
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'employé:', error);
     res.status(500).json({ error: 'Erreur lors de la suppression de l\'employé' });
-  }
-});
-
-// GET /api/employes/stats - Statistiques des employés
-router.get('/stats', (req, res) => {
-  try {
-    const stats = Employe.getStats();
-    res.json(stats);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques des employés:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques des employés' });
   }
 });
 

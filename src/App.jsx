@@ -104,6 +104,7 @@ function App() {
                 <Route path="groupes/new" element={<GroupeForm />} />
                 <Route path="groupes/:id" element={<GroupeDetail />} />
                 <Route path="groupes/:id/edit" element={<GroupeForm />} />
+                <Route path="groupes/:groupeId/participants" element={<ParticipantForm />} />
                 <Route path="enseignants" element={<EnseignantsList />} />
                 <Route path="enseignants/new" element={<EnseignantForm />} />
                 <Route path="enseignants/:id" element={<EnseignantDetail />} />
@@ -152,7 +153,7 @@ function App() {
               </Route>
 
               {/* Page de sélection d'entreprise (non protégée) */}
-              <Route path="/company-selection" element={<CompanySelection />} />
+              <Route path="/company-selection" element={<Navigate to="/" replace />} />
 
               {/* Routes utilisateur protégées */}
               <Route path="/*" element={
